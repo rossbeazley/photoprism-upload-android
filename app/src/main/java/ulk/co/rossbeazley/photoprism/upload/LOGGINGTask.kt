@@ -1,15 +1,18 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import android.content.Context
-import androidx.core.content.edit
-import androidx.preference.PreferenceManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.*
 
-class LOGGINGTask(private val appContext: Context, workerParams: WorkerParameters) :
+class LOGGINGTask(
+    appContext: Context,
+    workerParams: WorkerParameters,
+    private val auditRepository: AuditRepository
+) :
     Worker(appContext, workerParams) {
 
     override fun doWork(): Result {
@@ -18,7 +21,7 @@ class LOGGINGTask(private val appContext: Context, workerParams: WorkerParameter
         log("FOUND A FILE TO PROCESS: $path with mode $mode")
 
         val logMsg = "$mode $path"
-        auditlog(logMsg, appContext)
+        auditRepository.log(logMsg)
         when (mode) {
             "CREATE" -> {
                 logGuessOfFinalName(path)
@@ -36,7 +39,7 @@ class LOGGINGTask(private val appContext: Context, workerParams: WorkerParameter
             val format = SimpleDateFormat("yyyyMMdd_HHmmssSSS")
                 .format(date)
             val s = "expecting PXL_$format...jpg"
-            auditlog(s, appContext)
+            auditRepository.log(s)
         }
     }
 }

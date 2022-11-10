@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import ulk.co.rossbeazley.photoprism.upload.ui.main.MainFragment
 
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.STARTED
+import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,9 +34,8 @@ class MainActivity : AppCompatActivity() {
             )
             .firstOrNull()
             ?.let {
-                auditlog(
-                    "Last close: ${it.description} ${it.reason} ${it.timestamp}",
-                    MainActivity@ this
+                AuditRepository(this).log(
+                    "Last close: ${it.description} ${it.reason} ${it.timestamp}"
                 )
             }
     }

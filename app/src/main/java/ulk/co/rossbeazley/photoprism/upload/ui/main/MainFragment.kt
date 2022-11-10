@@ -7,37 +7,29 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import ulk.co.rossbeazley.photoprism.upload.R
+import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 
-class MainFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListener {
+class MainFragment : Fragment() {
 
     companion object {
         fun newInstance() = MainFragment()
     }
 
-    private lateinit var viewModel: MainViewModel
-
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
         i.inflate(R.layout.fragment_main, c, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val datastore = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        datastore.registerOnSharedPreferenceChangeListener(this)
-        onSharedPreferenceChanged(datastore, null)
-    }
-
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, s: String?) {
-        logLines(sharedPreferences).also {
-            view?.findViewById<TextView>(R.id.message)?.text = it
-            println(it)
+        val auditRepository = AuditRepository(requireContext()) //TODO custom fragment factory
+        val findViewById = view.findViewById<TextView>(R.id.message)
+        lifecycleScope.launch {
+            auditRepository.observeLogs().collect {
+                findViewById?.text = it
+            }
         }
     }
-
-    private fun logLines(sharedPreferences: SharedPreferences?): String = sharedPreferences
-        ?.all
-        ?.toSortedMap { a, b -> a.toLong().compareTo(b.toLong()) }
-        ?.map { "${it.key}:${it.value.toString()}\n" }
-        ?.joinToString { "$it\n" }
-        ?: ""
 }
