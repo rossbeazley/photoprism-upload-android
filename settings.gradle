@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "PhotoprismUpload"
 include ':app'
-include ':dav'
+//include ':dav'

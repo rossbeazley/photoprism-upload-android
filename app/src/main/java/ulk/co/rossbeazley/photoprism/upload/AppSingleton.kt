@@ -7,15 +7,22 @@ import android.content.Context
 import android.graphics.Color
 import android.util.Log
 import androidx.core.content.getSystemService
+import androidx.preference.PreferenceManager
 import androidx.work.*
+import kotlinx.coroutines.GlobalScope
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
+import ulk.co.rossbeazley.photoprism.upload.photoserver.WebdavPutTask
+import ulk.co.rossbeazley.photoprism.upload.photoserver.buildPhotoServer
 import java.io.File
 import java.util.concurrent.TimeUnit
 
 
 class AppSingleton : Application(), Configuration.Provider {
 
-    private val auditRepository : AuditRepository by lazy { AuditRepository(this) }
+    private val auditRepository : AuditRepository by lazy { AuditRepository(
+        GlobalScope,
+        PreferenceManager.getDefaultSharedPreferences(this)
+    ) }
     private val workManager : WorkManager by lazy { WorkManager.getInstance(this) }
 
     override fun getWorkManagerConfiguration() = Configuration.Builder()
@@ -42,6 +49,11 @@ class AppSingleton : Application(), Configuration.Provider {
                         workerParameters,
                         auditRepository
                     )
+                    WebdavPutTask::class.java.name -> WebdavPutTask(
+                        appContext,
+                        workerParameters,
+                        buildPhotoServer()
+                        )
                     else -> null
                 }
             }

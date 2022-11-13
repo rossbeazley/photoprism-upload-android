@@ -4,15 +4,16 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
-class AuditRepository(appContext: Context) : SharedPreferences.OnSharedPreferenceChangeListener {
+class AuditRepository(
+    val globalScope: CoroutineScope, preferences: SharedPreferences
+                      ) : SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
+    private val sharedPreferences: SharedPreferences = preferences
 
     init {
         sharedPreferences.registerOnSharedPreferenceChangeListener(this)
@@ -26,25 +27,32 @@ class AuditRepository(appContext: Context) : SharedPreferences.OnSharedPreferenc
     }
 
     fun logs() = logLines(sharedPreferences)
-                    .joinToString(separator = "\n") { it }
-                    .also { println(it) }
+        .joinToString(separator = "\n") { it }
+        .also { println(it) }
 
-    private fun logLines(sharedPreferences: SharedPreferences?) = sharedPreferences
-        ?.all
-        ?.toSortedMap { a, b -> a.toLong().compareTo(b.toLong()) }
-        ?.map { "${it.value.toString()}\n" }
-        ?: emptyList()
+    private fun logLines(sharedPreferences: SharedPreferences) =
+        sharedPreferences
+            .all
+            ?.toSortedMap { a, b -> a.toLong().compareTo(b.toLong()) }
+            ?.map { "${it.value.toString()}\n" }
+            ?: emptyList()
 
-    val flow = MutableStateFlow(logs())
+    private val flow = MutableStateFlow(logs())
 
-    fun observeLogs() : Flow<String> {
+    fun observeLogs(): Flow<String> {
         return flow
     }
 
     override fun onSharedPreferenceChanged(p0: SharedPreferences?, p1: String?) {
-        GlobalScope.launch {
+        globalScope.launch {
             flow.emit(logs())
         }
+    }
+
+    fun clearAll() {
+        sharedPreferences.edit()
+            .clear()
+            .apply()
     }
 }
 

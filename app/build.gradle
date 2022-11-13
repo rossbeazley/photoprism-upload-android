@@ -6,12 +6,20 @@ plugins {
 android {
     compileSdk 33
 
+    def Properties properties = new Properties()
+    properties.load(project.rootProject.file("local.properties").newDataInputStream())
+
     defaultConfig {
         applicationId "ulk.co.rossbeazley.photoprism.upload"
         minSdk 31
         targetSdk 33
         versionCode 1
         versionName "1.0"
+
+        buildConfigField "String", "webdavHostName", properties.getProperty('webdav.host', "").toString()
+        buildConfigField "String", "webdavUsserName", properties.getProperty('webdav.user', "").toString()
+        buildConfigField "String", "authUserName", properties.getProperty('auth.username', "").toString()
+        buildConfigField "String", "authPassword", properties.getProperty('auth.password', "").toString()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -70,6 +78,8 @@ dependencies {
     testImplementation "androidx.test:core:1.4.0"
     testImplementation "androidx.arch.core:core-testing:2.1.0"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
+
+    testImplementation "com.natpryce:hamkrest:1.8.0.1"
 
     //androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

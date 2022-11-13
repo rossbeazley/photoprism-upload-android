@@ -3,7 +3,9 @@ package ulk.co.rossbeazley.photoprism.upload
 import android.app.ActivityManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import ulk.co.rossbeazley.photoprism.upload.ui.main.MainFragment
+import androidx.preference.PreferenceManager
+import kotlinx.coroutines.GlobalScope
+import ulk.co.rossbeazley.photoprism.upload.ui.main.AuditLogsFragment
 
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.STARTED
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
@@ -15,7 +17,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, MainFragment.newInstance())
+                .replace(R.id.container, AuditLogsFragment.newInstance())
                 .commitNow()
         }
 
@@ -34,7 +36,10 @@ class MainActivity : AppCompatActivity() {
             )
             .firstOrNull()
             ?.let {
-                AuditRepository(this).log(
+                AuditRepository(
+                    GlobalScope,
+                    PreferenceManager.getDefaultSharedPreferences(applicationContext)
+                ).log(
                     "Last close: ${it.description} ${it.reason} ${it.timestamp}"
                 )
             }
