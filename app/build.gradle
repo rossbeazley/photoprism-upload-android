@@ -16,10 +16,10 @@ android {
         versionCode 1
         versionName "1.0"
 
-        buildConfigField "String", "webdavHostName", properties.getProperty('webdav.host', "").toString()
-        buildConfigField "String", "webdavUsserName", properties.getProperty('webdav.user', "").toString()
-        buildConfigField "String", "authUserName", properties.getProperty('auth.username', "").toString()
-        buildConfigField "String", "authPassword", properties.getProperty('auth.password', "").toString()
+        buildConfigField "String", "webdavHostName", "\""+properties.getProperty('webdav.host', "").toString()+"\""
+        buildConfigField "String", "webdavUsserName", "\""+properties.getProperty('webdav.user', "").toString()+"\""
+        buildConfigField "String", "authUserName", "\""+properties.getProperty('auth.username', "").toString()+"\""
+        buildConfigField "String", "authPassword", "\""+properties.getProperty('auth.password', "").toString()+"\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
