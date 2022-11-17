@@ -1,12 +1,10 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
 
 class PhotoPrismApp(
     config: Map<String, String>,
-    val fileSystem: UploadUseCases.Filesystem,
+    val fileSystem: Filesystem,
     private val jobSystem: CapturingBackgroundJobSystem,
     val auditLogService: CapturingAuditLogService,
     val uploadQueue: UploadQueue,

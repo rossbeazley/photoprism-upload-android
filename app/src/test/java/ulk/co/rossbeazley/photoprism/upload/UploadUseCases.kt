@@ -3,87 +3,81 @@ package ulk.co.rossbeazley.photoprism.upload
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.isA
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class UploadUseCases {
 
-    class Filesystem {
-        val flow = MutableSharedFlow<String>()
-        var watchedPath = "NONE"
-        fun watch(path: String): Flow<String> {
-            watchedPath = path
-            return flow
-        }
+    class Adapters(
+        val fileSystem: Filesystem,
+        val auditLogService: CapturingAuditLogService,
+        val jobSystem: CapturingBackgroundJobSystem,
+        val uploadQueue: UploadQueue,
+    )
+
+    private lateinit var config: MutableMap<String, String>
+    private lateinit var adapters: Adapters
+    private lateinit var application: PhotoPrismApp
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    @Before
+    fun build() {
+        config = mutableMapOf<String, String>("directory" to "any-directory-path")
+        adapters = Adapters(
+            fileSystem = Filesystem(),
+            auditLogService = CapturingAuditLogService(),
+            jobSystem = CapturingBackgroundJobSystem(),
+            uploadQueue = UploadQueue()
+        )
+        application = PhotoPrismApp(
+            config = config,
+            fileSystem = adapters.fileSystem,
+            jobSystem = adapters.jobSystem,
+            auditLogService = adapters.auditLogService,
+            uploadQueue = adapters.uploadQueue,
+            dispatcher = testDispatcher,
+        )
     }
 
     @Test // TODO missing config test
     fun photoDirectoryIsObserved() {
-        val fileSystem = Filesystem()
-
         // given the configuration exists
-        val config = mapOf<String, String>("directory" to "any-directory-path")
-        // when the app is started
-        val auditLogService = CapturingAuditLogService()
-        val jobSystem = CapturingBackgroundJobSystem()
-        val uploadQueue = UploadQueue()
-        val application = PhotoPrismApp(config, fileSystem, jobSystem, auditLogService, uploadQueue)
+        val expectedPath = "any-directory-path"
 
         // then the directory is observered
-        assertThat(fileSystem.watchedPath, equalTo("any-directory-path"))
+        assertThat(adapters.fileSystem.watchedPath, equalTo(expectedPath))
 
         // and an audit log entry is created
-        val capturedAuditLog = auditLogService.capturedAuditLog
+        val capturedAuditLog = adapters.auditLogService.capturedAuditLog
         assertThat(capturedAuditLog!!, isA<ApplicationCreatedAuditLog>())
     }
 
     @Test
-    fun photoUploadScheduled() {
-        // todo this will be extracted to setup
-        val context = UnconfinedTestDispatcher()
-        runTest(context) {
+    fun photoUploadScheduled() = runTest(testDispatcher) {
+        // when a photo is found
+        val expectedFilePath = "any-file-path-at-all"
+        adapters.fileSystem.flow.emit(expectedFilePath)
 
-            val auditLogService = CapturingAuditLogService()
-            val jobSystem = CapturingBackgroundJobSystem()
-            val uploadQueue = UploadQueue()
+        // then the upload job is scheduled
+        assertThat(adapters.jobSystem.jobFilePath, equalTo(expectedFilePath))
 
-            //given the photo directory is being watched
-            val fileSystem = Filesystem()
-            val application = PhotoPrismApp(
-                mapOf<String, String>("directory" to "any-directory-path"),
-                fileSystem,
-                jobSystem,
-                auditLogService,
-                uploadQueue,
-                context
-                )
-            // when a photo is found
-            val expectedFilePath = "any-file-path-at-all"
-            fileSystem.flow.emit(expectedFilePath)
+        // and an audit log is created
+        val capturedAuditLog = adapters.auditLogService.capturedAuditLog
+        assertThat(capturedAuditLog, equalTo(ScheduledAuditLog(expectedFilePath)))
 
-            // then the upload job is scheduled
-            val jobFilePath = jobSystem.jobFilePath
-            assertThat(jobFilePath, equalTo(expectedFilePath))
+        // and a queue entry is created as scheduled
+        val expectedQueueEntry = ScheduledFileUpload(expectedFilePath)
+        assertThat(adapters.uploadQueue.capturedQueueEntry, equalTo(expectedQueueEntry))
 
-            // and an audit log is created
-            val expectedAuditLog = ScheduledAuditLog(expectedFilePath)
-            val capturedAuditLog = auditLogService.capturedAuditLog
-            assertThat(capturedAuditLog, equalTo(expectedAuditLog))
-
-            // and a queue entry is created as scheduled
-            val expectedQueueEntry = ScheduledFileUpload(expectedFilePath)
-            val capturedQueueEntry = uploadQueue.capturedQueueEntry
-            assertThat(capturedQueueEntry, equalTo(expectedQueueEntry))
-        }
     }
 
-    @Test @Ignore("todo")
+    @Test
+    @Ignore("todo")
     fun photoUploadStarted() {
         //given a download is scheduled
         // when the system is ready to run our job
@@ -92,7 +86,8 @@ class UploadUseCases {
         // and the queue entry is updated to started
     }
 
-    @Test @Ignore("todo")
+    @Test
+    @Ignore("todo")
     fun photoUploadCompletes() {
         //given a photo is being uploaded
         // when the upload completes
@@ -101,7 +96,8 @@ class UploadUseCases {
         // and the job is marked as complete
     }
 
-    @Test @Ignore("todo")
+    @Test
+    @Ignore("todo")
     fun photoUploadIsRetried() {
         //given a photo is being uploaded
         // when the upload fails
@@ -110,7 +106,8 @@ class UploadUseCases {
         // and the job is marked as retry
     }
 
-    @Test @Ignore("todo")
+    @Test
+    @Ignore("todo")
     fun photoUploadFails() {
         //given a photo is being retried
         // when the upload fails
