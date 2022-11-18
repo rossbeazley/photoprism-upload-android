@@ -1,6 +1,7 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import kotlinx.coroutines.*
+import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 
 class PhotoPrismApp(
     config: Map<String, String>,
@@ -8,7 +9,8 @@ class PhotoPrismApp(
     private val jobSystem: CapturingBackgroundJobSystem,
     val auditLogService: CapturingAuditLogService,
     val uploadQueue: UploadQueue,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    val photoServer: PhotoServer
 ) {
 
     private val scope = CoroutineScope(dispatcher)
@@ -22,8 +24,12 @@ class PhotoPrismApp(
     }
 
     fun observedPhoto(expectedFilePath: String) {
-        jobSystem.schedule(expectedFilePath)
+        jobSystem.schedule(expectedFilePath, ::uploadPhoto)
         auditLogService.log(ScheduledAuditLog(expectedFilePath))
         uploadQueue.enququq(ScheduledFileUpload(expectedFilePath))
+    }
+
+    private fun uploadPhoto(atFilePath: String) {
+        photoServer.doUpload(atFilePath)
     }
 }

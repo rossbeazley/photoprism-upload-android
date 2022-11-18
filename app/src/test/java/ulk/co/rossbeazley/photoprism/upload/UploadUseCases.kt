@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class UploadUseCases {
@@ -18,6 +19,7 @@ class UploadUseCases {
         val auditLogService: CapturingAuditLogService,
         val jobSystem: CapturingBackgroundJobSystem,
         val uploadQueue: UploadQueue,
+        val photoServer: MockPhotoServer,
     )
 
     private lateinit var config: MutableMap<String, String>
@@ -32,7 +34,8 @@ class UploadUseCases {
             fileSystem = Filesystem(),
             auditLogService = CapturingAuditLogService(),
             jobSystem = CapturingBackgroundJobSystem(),
-            uploadQueue = UploadQueue()
+            uploadQueue = UploadQueue(),
+            photoServer = MockPhotoServer()
         )
         application = PhotoPrismApp(
             config = config,
@@ -40,6 +43,7 @@ class UploadUseCases {
             jobSystem = adapters.jobSystem,
             auditLogService = adapters.auditLogService,
             uploadQueue = adapters.uploadQueue,
+            photoServer = adapters.photoServer as PhotoServer,
             dispatcher = testDispatcher,
         )
     }
@@ -77,11 +81,17 @@ class UploadUseCases {
     }
 
     @Test
-    @Ignore("todo")
-    fun photoUploadStarted() {
+    fun photoUploadStarted() = runTest(testDispatcher) {
         //given a download is scheduled
+        val expectedFilePath = "any-file-path-at-all"
+        adapters.fileSystem.flow.emit(expectedFilePath)
+
         // when the system is ready to run our job
+        adapters.jobSystem.readyCallback(expectedFilePath)
+
         // then the download is started
+        assertThat(adapters.photoServer.path, equalTo(expectedFilePath))
+
         // and an audit log is created
         // and the queue entry is updated to started
     }
