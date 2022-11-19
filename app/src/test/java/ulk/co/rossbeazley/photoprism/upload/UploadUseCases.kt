@@ -10,6 +10,7 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
+import kotlin.coroutines.resume
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class UploadUseCases {
@@ -97,13 +98,22 @@ class UploadUseCases {
     }
 
     @Test
-    @Ignore("todo")
-    fun photoUploadCompletes() {
+    fun photoUploadCompletes() = runTest(testDispatcher) {
         //given a photo is being uploaded
+        val expectedFilePath = "any-file-path-at-all"
+        adapters.fileSystem.flow.emit(expectedFilePath)
+        val uploadResult = adapters.jobSystem.readyCallback(expectedFilePath)
+
         // when the upload completes
+        // photoserver callback complete with ok
+        // THIS IS EASY WITH CALLBACKS
+        adapters.photoServer.capturedContinuation?.resume(Result.success(Unit))
+
         // then the queue entry is removed
         // and an audit log is created
+
         // and the job is marked as complete
+        assertThat(uploadResult.isSuccess, equalTo(true))
     }
 
     @Test

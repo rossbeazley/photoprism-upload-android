@@ -29,7 +29,7 @@ class PhotoPrismApp(
         uploadQueue.enququq(ScheduledFileUpload(expectedFilePath))
     }
 
-    private fun uploadPhoto(atFilePath: String) {
-        photoServer.doUpload(atFilePath)
+    private fun uploadPhoto(atFilePath: String) : Result<Unit> {
+        return photoServer.doUpload(atFilePath)
     }
 }

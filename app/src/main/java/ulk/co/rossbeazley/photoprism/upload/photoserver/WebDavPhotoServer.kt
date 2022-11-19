@@ -6,6 +6,8 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.asRequestBody
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import java.io.File
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class WebDavPhotoServer(
     val user: String,
@@ -29,6 +31,27 @@ class WebDavPhotoServer(
         } catch (e: Exception) {
             log("exception $e")
             return Result.failure(e)
+        }
+    }
+
+    override suspend fun upload(path: String): Result<Unit> {
+        return suspendCoroutine { continuation ->
+
+            try {
+                val davResource = DavCollection(
+                    httpClient,
+                    "https://$user@$host/originals/groovy-${System.currentTimeMillis()}.png".toHttpUrl()
+                )
+                val body = File(path).asRequestBody()
+                davResource.put(body = body, ifNoneMatch = true) {
+                    log("dav respone $it")
+                    continuation.resume( Result.success(Unit) )
+                }
+            } catch (e: Exception) {
+                log("exception $e")
+                continuation.resume( Result.failure(e) )
+            }
+
         }
     }
 }
