@@ -4,9 +4,9 @@ import kotlin.coroutines.suspendCoroutine
 
 class CapturingBackgroundJobSystem {
 
-    var readyCallback: (String) -> Result<Unit> = { _-> Result.failure(Exception())}
+    var readyCallback: suspend (String) -> JobResult = { _-> JobResult.Failure}
     var jobFilePath : String? = null
-    fun schedule(forPath: String, ready: (String)->Result<Unit>) {
+    fun schedule(forPath: String, ready: suspend (String)->JobResult) {
         jobFilePath = forPath
         this.readyCallback = ready
     }

@@ -3,7 +3,9 @@ package ulk.co.rossbeazley.photoprism.upload
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.isA
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -88,7 +90,8 @@ class UploadUseCases {
         adapters.fileSystem.flow.emit(expectedFilePath)
 
         // when the system is ready to run our job
-        adapters.jobSystem.readyCallback(expectedFilePath)
+        async { adapters.jobSystem.readyCallback(expectedFilePath) }
+        adapters.photoServer.capturedContinuation?.resume(Result.success(Unit)) // TODO enable auto complete
 
         // then the download is started
         assertThat(adapters.photoServer.path, equalTo(expectedFilePath))
@@ -102,28 +105,34 @@ class UploadUseCases {
         //given a photo is being uploaded
         val expectedFilePath = "any-file-path-at-all"
         adapters.fileSystem.flow.emit(expectedFilePath)
-        val uploadResult = adapters.jobSystem.readyCallback(expectedFilePath)
+        val uploadResult = async { adapters.jobSystem.readyCallback(expectedFilePath) }
 
         // when the upload completes
         // photoserver callback complete with ok
-        // THIS IS EASY WITH CALLBACKS
         adapters.photoServer.capturedContinuation?.resume(Result.success(Unit))
 
         // then the queue entry is removed
         // and an audit log is created
 
         // and the job is marked as complete
-        assertThat(uploadResult.isSuccess, equalTo(true))
+        assertThat(uploadResult.await(), isA<JobResult.Success>())
     }
 
     @Test
-    @Ignore("todo")
-    fun photoUploadIsRetried() {
+    fun photoUploadIsRetried() = runTest(testDispatcher) {
         //given a photo is being uploaded
+        val expectedFilePath = "any-file-path-at-all"
+        adapters.fileSystem.flow.emit(expectedFilePath)
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.readyCallback(expectedFilePath) }
+
         // when the upload fails
+        adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
+
         // then the queue entry is set to retry
         // and an audit log is created
+
         // and the job is marked as retry
+        assertThat(uploadResult.await(), isA<JobResult.Retry>()) // TODO change the return type of readyCallback from Result to new Result { Success, Failed, Retry }
     }
 
     @Test

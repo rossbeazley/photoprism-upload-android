@@ -29,7 +29,15 @@ class PhotoPrismApp(
         uploadQueue.enququq(ScheduledFileUpload(expectedFilePath))
     }
 
-    private fun uploadPhoto(atFilePath: String) : Result<Unit> {
-        return photoServer.doUpload(atFilePath)
+    private suspend fun uploadPhoto(atFilePath: String) : JobResult {
+        val upload = photoServer.upload(atFilePath)
+        return when {
+            upload.isSuccess -> {
+                JobResult.Success
+            }
+            else -> {
+                JobResult.Retry
+            }
+        }
     }
 }

@@ -1,6 +1,8 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import at.bitfire.dav4jvm.DavCollection
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -36,7 +38,6 @@ class WebDavPhotoServer(
 
     override suspend fun upload(path: String): Result<Unit> {
         return suspendCoroutine { continuation ->
-
             try {
                 val davResource = DavCollection(
                     httpClient,
