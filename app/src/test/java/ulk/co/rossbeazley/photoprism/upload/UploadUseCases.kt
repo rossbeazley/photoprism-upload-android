@@ -118,7 +118,7 @@ class UploadUseCases {
         assertThat(uploadResult.await(), isA<JobResult.Success>())
     }
 
-    @Test
+    @Test // the one where the job is requested to retry
     fun photoUploadIsRetried() = runTest(testDispatcher) {
         //given a photo is being uploaded
         val expectedFilePath = "any-file-path-at-all"
@@ -132,17 +132,44 @@ class UploadUseCases {
         // and an audit log is created
 
         // and the job is marked as retry
-        assertThat(uploadResult.await(), isA<JobResult.Retry>()) // TODO change the return type of readyCallback from Result to new Result { Success, Failed, Retry }
+        assertThat(uploadResult.await(), isA<JobResult.Retry>())
     }
 
     @Test
-    @Ignore("todo")
-    fun photoUploadFails() {
+    fun photoUploadSucceedsOnRetry() = runTest(testDispatcher) {
         //given a photo is being retried
+        photoUploadIsRetried()
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.readyCallback("any-file-path-at-all") }
+
+        // when the upload completes
+        // photoserver callback complete with ok
+        adapters.photoServer.capturedContinuation?.resume(Result.success(Unit))
+
+        // then the queue entry is removed
+        // and an audit log is created
+
+        // and the job is marked as complete
+        assertThat(uploadResult.await(), isA<JobResult.Success>())
+    }
+
+    @Test
+    fun photoUploadFails() = runTest(testDispatcher) {
+        //given a photo is being retried
+        photoUploadIsRetried()
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.readyCallback("any-file-path-at-all") }
+
         // when the upload fails
+        adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
+
         // then the queue entry is removed
         // and an audit log is created
         // and the job is marked as failed
+        assertThat(uploadResult.await(), isA<JobResult.Failure>())
+
         // and a fail queue entry is created
     }
+
+    fun uploadTwoFiles(){}
+
+    fun uploadTwoSlowFilesWithRetries(){}
 }

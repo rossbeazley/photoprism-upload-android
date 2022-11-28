@@ -29,13 +29,19 @@ class PhotoPrismApp(
         uploadQueue.enququq(ScheduledFileUpload(expectedFilePath))
     }
 
+    var retryCount = 0
+
     private suspend fun uploadPhoto(atFilePath: String) : JobResult {
         val upload = photoServer.upload(atFilePath)
         return when {
             upload.isSuccess -> {
                 JobResult.Success
             }
+            upload.isFailure && retryCount > 0 -> {
+                JobResult.Failure
+            }
             else -> {
+                retryCount++
                 JobResult.Retry
             }
         }
