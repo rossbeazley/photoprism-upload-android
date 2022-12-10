@@ -10,7 +10,7 @@ class PhotoPrismApp(
     val auditLogService: CapturingAuditLogService,
     val uploadQueue: UploadQueue,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    val photoServer: PhotoServer
+    val photoServer: PhotoServer,
 ) {
 
     private val scope = CoroutineScope(dispatcher)
@@ -26,22 +26,23 @@ class PhotoPrismApp(
     fun observedPhoto(expectedFilePath: String) {
         jobSystem.schedule(expectedFilePath, ::uploadPhoto)
         auditLogService.log(ScheduledAuditLog(expectedFilePath))
-        uploadQueue.enququq(ScheduledFileUpload(expectedFilePath))
+        uploadQueue.enqueue(ScheduledFileUpload(expectedFilePath))
     }
 
-    var retryCount = 0
-
     private suspend fun uploadPhoto(atFilePath: String) : JobResult {
+        val peek = uploadQueue.peek(atFilePath)
+        val queueEntry = peek.copy(attemptCount = peek.attemptCount + 1)
+        uploadQueue.enqueue(queueEntry)
+
         val upload = photoServer.upload(atFilePath)
         return when {
             upload.isSuccess -> {
                 JobResult.Success
             }
-            upload.isFailure && retryCount > 0 -> {
+            upload.isFailure && queueEntry.attemptCount == 2 -> {
                 JobResult.Failure
             }
             else -> {
-                retryCount++
                 JobResult.Retry
             }
         }

@@ -16,7 +16,7 @@ class MockPhotoServer : PhotoServer {
 
     override suspend fun upload(path: String): Result<Unit> {
         this.path = path
-        return suspendCoroutine<Result<Unit>> { continuation: Continuation<Result<Unit>> ->
+        return suspendCoroutine { continuation: Continuation<Result<Unit>> ->
             capturedContinuation = continuation
         }
     }

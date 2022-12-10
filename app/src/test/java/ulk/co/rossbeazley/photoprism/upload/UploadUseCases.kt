@@ -3,13 +3,10 @@ package ulk.co.rossbeazley.photoprism.upload
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.isA
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import kotlin.coroutines.resume
@@ -30,15 +27,18 @@ class UploadUseCases {
     private lateinit var application: PhotoPrismApp
     private val testDispatcher = UnconfinedTestDispatcher()
 
+    var expectedFilePath = ""
+
     @Before
     fun build() {
+        expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
         config = mutableMapOf<String, String>("directory" to "any-directory-path")
         adapters = Adapters(
             fileSystem = Filesystem(),
             auditLogService = CapturingAuditLogService(),
             jobSystem = CapturingBackgroundJobSystem(),
             uploadQueue = UploadQueue(),
-            photoServer = MockPhotoServer()
+            photoServer = MockPhotoServer(),
         )
         application = PhotoPrismApp(
             config = config,
@@ -59,7 +59,7 @@ class UploadUseCases {
         // then the directory is observered
         assertThat(adapters.fileSystem.watchedPath, equalTo(expectedPath))
 
-        // and an audit log entry is created
+        // and an audit log entry is created // TODO rework this so we can observe the queue without caring how its implemented
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
         assertThat(capturedAuditLog!!, isA<ApplicationCreatedAuditLog>())
     }
@@ -67,7 +67,6 @@ class UploadUseCases {
     @Test
     fun photoUploadScheduled() = runTest(testDispatcher) {
         // when a photo is found
-        val expectedFilePath = "any-file-path-at-all"
         adapters.fileSystem.flow.emit(expectedFilePath)
 
         // then the upload job is scheduled
@@ -86,24 +85,24 @@ class UploadUseCases {
     @Test
     fun photoUploadStarted() = runTest(testDispatcher) {
         //given a download is scheduled
-        val expectedFilePath = "any-file-path-at-all"
-        adapters.fileSystem.flow.emit(expectedFilePath)
+        photoUploadScheduled()
 
         // when the system is ready to run our job
-        async { adapters.jobSystem.readyCallback(expectedFilePath) }
-        adapters.photoServer.capturedContinuation?.resume(Result.success(Unit)) // TODO enable auto complete
+        val job = launch { adapters.jobSystem.readyCallback(expectedFilePath) }
 
         // then the download is started
         assertThat(adapters.photoServer.path, equalTo(expectedFilePath))
 
         // and an audit log is created
         // and the queue entry is updated to started
-    }
 
+        // this just lets the coroutine finish, couldnt get it to cancel
+        adapters.photoServer.capturedContinuation?.resume(Result.success(Unit)) // TODO enable auto complete
+
+    }
     @Test
     fun photoUploadCompletes() = runTest(testDispatcher) {
         //given a photo is being uploaded
-        val expectedFilePath = "any-file-path-at-all"
         adapters.fileSystem.flow.emit(expectedFilePath)
         val uploadResult = async { adapters.jobSystem.readyCallback(expectedFilePath) }
 
@@ -169,7 +168,58 @@ class UploadUseCases {
         // and a fail queue entry is created
     }
 
-    fun uploadTwoFiles(){}
+    @Test
+    fun uploadTwoFiles() = runTest(testDispatcher) {
 
-    fun uploadTwoSlowFilesWithRetries(){}
+        expectedFilePath = "one"
+        //assert that upload 1 success
+        photoUploadCompletes()
+
+        expectedFilePath = "two"
+        // assert that upload 2 success
+        photoUploadCompletes()
+    }
+
+    @Test
+    fun uploadTwoSlowFilesFirstRetries() = runTest(testDispatcher) {
+        expectedFilePath = "one"
+        photoUploadScheduled()
+
+        val resultOne = async { adapters.jobSystem.readyCallback(expectedFilePath) }
+        val uploadOne = adapters.photoServer.capturedContinuation
+
+        expectedFilePath = "two"
+        photoUploadScheduled()
+
+        val resultTwo = async { adapters.jobSystem.readyCallback(expectedFilePath) }
+        val uploadTwo = adapters.photoServer.capturedContinuation
+
+        uploadOne?.resume(Result.failure(Exception()))
+
+        assertThat(resultTwo.isCompleted, equalTo(false))
+
+        uploadTwo?.resume(Result.success(Unit))
+    }
+
+    @Test
+    fun uploadTwoSlowFilesBothRetries() = runTest(testDispatcher) {
+        expectedFilePath = "one"
+        photoUploadScheduled()
+
+        val resultOne = async { adapters.jobSystem.readyCallback(expectedFilePath) }
+        val uploadOne = adapters.photoServer.capturedContinuation
+
+        expectedFilePath = "two"
+        photoUploadScheduled()
+
+        val resultTwo = async { adapters.jobSystem.readyCallback(expectedFilePath) }
+        val uploadTwo = adapters.photoServer.capturedContinuation
+
+        uploadOne?.resume(Result.failure(Exception()))
+
+        uploadTwo?.resume(Result.failure(Exception()))
+
+        assertThat(resultOne.await(), equalTo(JobResult.Retry))
+        assertThat(resultTwo.await(), equalTo(JobResult.Retry))
+    }
 }
