@@ -42,14 +42,13 @@ class RetryUploadUseCases {
             photoServer = MockPhotoServer(),
         )
         application = PhotoPrismApp(
-            config = config,
             fileSystem = adapters.fileSystem,
             jobSystem = adapters.jobSystem,
             auditLogService = adapters.auditLogService,
             uploadQueue = adapters.uploadQueue,
-            photoServer = adapters.photoServer as PhotoServer,
             dispatcher = testDispatcher,
-            maxUploadAttempts = maxUploadAttempts
+            photoServer = adapters.photoServer as PhotoServer,
+            config = Config("any-directory-path", maxUploadAttempts)
         )
 
     }

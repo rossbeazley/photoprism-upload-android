@@ -41,13 +41,13 @@ class UploadUseCases {
             photoServer = MockPhotoServer(),
         )
         application = PhotoPrismApp(
-            config = config,
             fileSystem = adapters.fileSystem,
             jobSystem = adapters.jobSystem,
             auditLogService = adapters.auditLogService,
             uploadQueue = adapters.uploadQueue,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
+            config = Config("any-directory-path"),
         )
     }
 

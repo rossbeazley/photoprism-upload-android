@@ -4,20 +4,19 @@ import kotlinx.coroutines.*
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 
 class PhotoPrismApp(
-    config: Map<String, String>,
     val fileSystem: Filesystem,
     private val jobSystem: CapturingBackgroundJobSystem,
     val auditLogService: CapturingAuditLogService,
     val uploadQueue: UploadQueue,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     val photoServer: PhotoServer,
-    val maxUploadAttempts: Int = 2,
+    val config: Config,
 ) {
 
     private val scope = CoroutineScope(dispatcher)
 
     init {
-        val flow = fileSystem.watch(config.getValue("directory"))
+        val flow = fileSystem.watch(config.photoDirectory)
         scope.launch {
             flow.collect(::observedPhoto)
         }
@@ -41,7 +40,7 @@ class PhotoPrismApp(
             result.isSuccess -> {
                 JobResult.Success
             }
-            result.isFailure && queueEntry.attemptCount == maxUploadAttempts -> {
+            result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
                 JobResult.Failure
             }
             else -> {
