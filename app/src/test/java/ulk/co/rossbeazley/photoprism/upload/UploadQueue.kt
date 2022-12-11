@@ -3,7 +3,7 @@ package ulk.co.rossbeazley.photoprism.upload
 class UploadQueue {
     var capturedQueueEntry : ScheduledFileUpload? = null
 
-    fun enqueue(queueEntry : ScheduledFileUpload) {
+    fun put(queueEntry : ScheduledFileUpload) {
         capturedQueueEntry = queueEntry
         map[queueEntry.filePath] = queueEntry
     }

@@ -26,20 +26,21 @@ class PhotoPrismApp(
     fun observedPhoto(expectedFilePath: String) {
         jobSystem.schedule(expectedFilePath, ::uploadPhoto)
         auditLogService.log(ScheduledAuditLog(expectedFilePath))
-        uploadQueue.enqueue(ScheduledFileUpload(expectedFilePath))
+        uploadQueue.put(ScheduledFileUpload(expectedFilePath))
     }
 
-    private suspend fun uploadPhoto(atFilePath: String) : JobResult {
-        val peek = uploadQueue.peek(atFilePath)
-        val queueEntry = peek.copy(attemptCount = peek.attemptCount + 1)
-        uploadQueue.enqueue(queueEntry)
+    private suspend fun uploadPhoto(atFilePath: String): JobResult {
+        val queueEntry = uploadQueue
+                            .peek(atFilePath)
+                            .willAttemptUpload()
+                            .also(uploadQueue::put)
 
-        val upload = photoServer.upload(atFilePath)
+        val result: Result<Unit> = photoServer.upload(atFilePath)
         return when {
-            upload.isSuccess -> {
+            result.isSuccess -> {
                 JobResult.Success
             }
-            upload.isFailure && queueEntry.attemptCount == 2 -> {
+            result.isFailure && queueEntry.attemptCount == 2 -> {
                 JobResult.Failure
             }
             else -> {
