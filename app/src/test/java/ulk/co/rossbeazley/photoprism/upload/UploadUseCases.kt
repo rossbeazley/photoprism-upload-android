@@ -46,8 +46,8 @@ class UploadUseCases {
             jobSystem = adapters.jobSystem,
             auditLogService = adapters.auditLogService,
             uploadQueue = adapters.uploadQueue,
-            photoServer = adapters.photoServer as PhotoServer,
             dispatcher = testDispatcher,
+            photoServer = adapters.photoServer as PhotoServer,
         )
     }
 

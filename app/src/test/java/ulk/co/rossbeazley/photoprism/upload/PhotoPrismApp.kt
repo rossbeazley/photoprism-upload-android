@@ -11,6 +11,7 @@ class PhotoPrismApp(
     val uploadQueue: UploadQueue,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     val photoServer: PhotoServer,
+    val maxUploadAttempts: Int = 2,
 ) {
 
     private val scope = CoroutineScope(dispatcher)
@@ -40,7 +41,7 @@ class PhotoPrismApp(
             result.isSuccess -> {
                 JobResult.Success
             }
-            result.isFailure && queueEntry.attemptCount == 2 -> {
+            result.isFailure && queueEntry.attemptCount == maxUploadAttempts -> {
                 JobResult.Failure
             }
             else -> {
