@@ -95,6 +95,8 @@ class UploadUseCases {
 
         // and an audit log is created
         // and the queue entry is updated to started
+        val expectedQueueEntry = RunningFileUpload(expectedFilePath, 1)
+        assertThat(adapters.uploadQueue.capturedQueueEntry, equalTo(expectedQueueEntry))
 
         // this just lets the coroutine finish, couldnt get it to cancel
         adapters.photoServer.capturedContinuation?.resume(Result.success(Unit)) // TODO enable auto complete

@@ -21,7 +21,6 @@ class RetryUploadUseCases {
         val photoServer: MockPhotoServer,
     )
 
-    private lateinit var config: MutableMap<String, String>
     private lateinit var adapters: Adapters
     private lateinit var application: PhotoPrismApp
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -33,7 +32,6 @@ class RetryUploadUseCases {
     @Before
     fun build() {
         expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
-        config = mutableMapOf<String, String>("directory" to "any-directory-path")
         adapters = Adapters(
             fileSystem = Filesystem(),
             auditLogService = CapturingAuditLogService(),
