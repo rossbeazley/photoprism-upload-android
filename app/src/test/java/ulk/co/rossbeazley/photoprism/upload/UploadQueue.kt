@@ -8,6 +8,11 @@ class UploadQueue {
         map[queueEntry.filePath] = queueEntry
     }
 
+    var removedQueueEntry : UploadQueueEntry? = null
+    fun remove(queueEntry: UploadQueueEntry) {
+        removedQueueEntry = queueEntry
+    }
+
     val map : MutableMap<String, UploadQueueEntry> = mutableMapOf()
 
     fun peek(id: String): UploadQueueEntry {

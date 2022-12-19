@@ -94,6 +94,7 @@ class UploadUseCases {
         assertThat(adapters.photoServer.path, equalTo(expectedFilePath))
 
         // and an audit log is created
+
         // and the queue entry is updated to started
         val expectedQueueEntry = RunningFileUpload(expectedFilePath, 1)
         assertThat(adapters.uploadQueue.capturedQueueEntry, equalTo(expectedQueueEntry))
@@ -113,6 +114,8 @@ class UploadUseCases {
         adapters.photoServer.capturedContinuation?.resume(Result.success(Unit))
 
         // then the queue entry is removed
+        assertThat(adapters.uploadQueue.removedQueueEntry?.filePath, equalTo(expectedFilePath))
+
         // and an audit log is created
 
         // and the job is marked as complete

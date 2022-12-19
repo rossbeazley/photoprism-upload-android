@@ -38,6 +38,7 @@ class PhotoPrismApp(
         val result: Result<Unit> = photoServer.upload(atFilePath)
         return when {
             result.isSuccess -> {
+                uploadQueue.remove(queueEntry)
                 JobResult.Success
             }
             result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
