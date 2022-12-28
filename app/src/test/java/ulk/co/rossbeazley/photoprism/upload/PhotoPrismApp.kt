@@ -42,9 +42,11 @@ class PhotoPrismApp(
                 JobResult.Success
             }
             result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
+                uploadQueue.put(queueEntry.failed())
                 JobResult.Failure
             }
             else -> {
+                uploadQueue.put(queueEntry.retryLater())
                 JobResult.Retry
             }
         }

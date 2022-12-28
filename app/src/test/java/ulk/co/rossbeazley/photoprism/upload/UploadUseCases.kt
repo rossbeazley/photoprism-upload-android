@@ -133,6 +133,9 @@ class UploadUseCases {
         adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
 
         // then the queue entry is set to retry
+        val expectedQueueEntry = RetryFileUpload(expectedFilePath, 1)
+        assertThat(adapters.uploadQueue.capturedQueueEntry, equalTo(expectedQueueEntry))
+
         // and an audit log is created
 
         // and the job is marked as retry
@@ -165,12 +168,13 @@ class UploadUseCases {
         // when the upload fails
         adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
 
-        // then the queue entry is removed
-        // and an audit log is created
+        // then an audit log is created
         // and the job is marked as failed
         assertThat(uploadResult.await(), isA<JobResult.Failure>())
 
         // and a fail queue entry is created
+        val expectedQueueEntry = FailedFileUpload(expectedFilePath)
+        assertThat(adapters.uploadQueue.capturedQueueEntry, equalTo(expectedQueueEntry))
     }
 
     @Test

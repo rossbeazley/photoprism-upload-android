@@ -11,6 +11,7 @@ class UploadQueue {
     var removedQueueEntry : UploadQueueEntry? = null
     fun remove(queueEntry: UploadQueueEntry) {
         removedQueueEntry = queueEntry
+        map.remove(queueEntry.filePath)
     }
 
     val map : MutableMap<String, UploadQueueEntry> = mutableMapOf()
