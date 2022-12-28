@@ -2,6 +2,10 @@ This will watch the camera folder and use webdav to upload images
 
 Sort of a task list:
 
+✓ - done
+❌ - dropped
+😎 - re-work
+
 audit logs: 
  rework audit logs so they are "proper", maybe a json object?
  add an audit log screen with actual list
@@ -33,7 +37,7 @@ System Collaborators:
 
 File watcher service:
  collaborates with upload service
- filewatcher adapter plugs into this
+ filewatcher adapter plugs into this  <--- DO NEXT
  
 
 Foreground service:
@@ -50,7 +54,7 @@ Sync queue:
  has a View
  can retry an item - removes from queue as its not failed
  can enqueue a failed item
- needs persistence
+ needs persistence <--- DO NEXT
 
 Audit Logs:
  has a view
@@ -58,3 +62,11 @@ Audit Logs:
  can get all the entries
  needs persistence
 
+
+
+
+Next up:
+ - rework callback for work manager to promote to explicit public primary port
+ - write adapter for file watcher service
+ - write adapter to persist sync queue
+ - implement work manager integration
