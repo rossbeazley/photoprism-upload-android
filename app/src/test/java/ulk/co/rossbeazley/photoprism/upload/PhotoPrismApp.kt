@@ -23,8 +23,12 @@ class PhotoPrismApp(
         auditLogService.log(ApplicationCreatedAuditLog())
     }
 
-    fun observedPhoto(expectedFilePath: String) {
-        jobSystem.schedule(expectedFilePath, ::uploadPhoto)
+    suspend fun readyToUpload(expectedFilePath: String): JobResult {
+        return uploadPhoto(expectedFilePath)
+    }
+
+    private fun observedPhoto(expectedFilePath: String) {
+        jobSystem.schedule(expectedFilePath)
         auditLogService.log(ScheduledAuditLog(expectedFilePath))
         uploadQueue.put(ScheduledFileUpload(expectedFilePath))
     }

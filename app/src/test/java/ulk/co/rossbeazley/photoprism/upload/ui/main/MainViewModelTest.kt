@@ -10,18 +10,18 @@ import org.junit.Test
 
 class MainViewModelTest {
 
-    @Before
+    //@Before
     fun starting() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
     }
 
-    @After
+  //  @After
     fun finished() {
         Dispatchers.resetMain()
     }
 
 
-    @Test
+//    @Test
     fun test() {
         val mainViewModel = MainViewModel()
         mainViewModel.list()
