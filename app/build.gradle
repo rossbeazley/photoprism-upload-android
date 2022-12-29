@@ -6,7 +6,7 @@ plugins {
 android {
     compileSdk 33
 
-    def Properties properties = new Properties()
+    Properties properties = new Properties()
     properties.load(project.rootProject.file("local.properties").newDataInputStream())
 
     defaultConfig {
@@ -46,6 +46,14 @@ android {
         android.packagingOptions.resources.excludes += "META-INF/DEPENDENCIES"
         android.packagingOptions.resources.excludes += "META-INF/LICENSE.md"
         android.packagingOptions.resources.excludes += "META-INF/NOTICE.md"
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs += 'src/main/kotlin'
+            }
+        }
     }
 }
 

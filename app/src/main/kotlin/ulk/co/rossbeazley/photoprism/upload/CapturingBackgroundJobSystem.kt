@@ -9,7 +9,7 @@ class CapturingBackgroundJobSystem {
         jobFilePath = forPath
     }
 
-    var readyCallback: suspend (String) -> JobResult = { _-> JobResult.Failure}
+    var readyCallback: suspend (String) -> JobResult = { _-> JobResult.Failure }
     fun register(callback: suspend (String) -> JobResult) {
         readyCallback = callback
     }
