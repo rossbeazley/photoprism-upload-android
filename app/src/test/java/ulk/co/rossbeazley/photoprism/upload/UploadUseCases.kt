@@ -88,7 +88,7 @@ class UploadUseCases {
         photoUploadScheduled()
 
         // when the system is ready to run our job
-        val job = launch { application.readyToUpload(expectedFilePath) }
+        val job = launch { adapters.jobSystem.runCallback() }
 
         // then the download is started
         assertThat(adapters.photoServer.path, equalTo(expectedFilePath))
@@ -107,7 +107,7 @@ class UploadUseCases {
     fun photoUploadCompletes() = runTest(testDispatcher) {
         //given a photo is being uploaded
         adapters.fileSystem.flow.emit(expectedFilePath)
-        val uploadResult = async { application.readyToUpload(expectedFilePath) }
+        val uploadResult = async { adapters.jobSystem.runCallback() }
 
         // when the upload completes
         // photoserver callback complete with ok
@@ -126,7 +126,7 @@ class UploadUseCases {
     fun photoUploadIsRetried() = runTest(testDispatcher) {
         //given a photo is being uploaded
         adapters.fileSystem.flow.emit(expectedFilePath)
-        val uploadResult: Deferred<JobResult> = async { application.readyToUpload(expectedFilePath) }
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
 
         // when the upload fails
         adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
@@ -145,7 +145,7 @@ class UploadUseCases {
     fun photoUploadSucceedsOnRetry() = runTest(testDispatcher) {
         //given a photo is being retried
         photoUploadIsRetried()
-        val uploadResult: Deferred<JobResult> = async { application.readyToUpload(expectedFilePath) }
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
 
         // when the upload completes
         // photoserver callback complete with ok
@@ -162,7 +162,7 @@ class UploadUseCases {
     fun photoUploadFails() = runTest(testDispatcher) {
         //given a photo is being retried
         photoUploadIsRetried()
-        val uploadResult: Deferred<JobResult> = async { application.readyToUpload(expectedFilePath) }
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
 
         // when the upload fails
         adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
@@ -193,13 +193,13 @@ class UploadUseCases {
         expectedFilePath = "one"
         photoUploadScheduled()
 
-        val resultOne = async { application.readyToUpload(expectedFilePath) }
+        val resultOne = async { adapters.jobSystem.runCallback() }
         val uploadOne = adapters.photoServer.capturedContinuation
 
         expectedFilePath = "two"
         photoUploadScheduled()
 
-        val resultTwo = async { application.readyToUpload(expectedFilePath) }
+        val resultTwo = async { adapters.jobSystem.runCallback() }
         val uploadTwo = adapters.photoServer.capturedContinuation
 
         uploadOne?.resume(Result.failure(Exception()))
@@ -214,13 +214,13 @@ class UploadUseCases {
         expectedFilePath = "one"
         photoUploadScheduled()
 
-        val resultOne = async { application.readyToUpload(expectedFilePath) }
+        val resultOne = async { adapters.jobSystem.runCallback() }
         val uploadOne = adapters.photoServer.capturedContinuation
 
         expectedFilePath = "two"
         photoUploadScheduled()
 
-        val resultTwo = async { application.readyToUpload(expectedFilePath) }
+        val resultTwo = async { adapters.jobSystem.runCallback() }
         val uploadTwo = adapters.photoServer.capturedContinuation
 
         uploadOne?.resume(Result.failure(Exception()))

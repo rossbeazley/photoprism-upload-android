@@ -54,7 +54,7 @@ class RetryUploadUseCases {
     private suspend fun uploadFails(): JobResult {
         val uploadResult: Deferred<JobResult>
         coroutineScope {
-            uploadResult = async { application.readyToUpload(expectedFilePath) }
+            uploadResult = async { adapters.jobSystem.runCallback() }
             adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
         }
         return uploadResult.await()
@@ -71,7 +71,7 @@ class RetryUploadUseCases {
         }
 
 
-        val uploadResult: Deferred<JobResult> = async { application.readyToUpload(expectedFilePath) }
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
 
         // when the upload completes
         // photoserver callback complete with ok
@@ -94,7 +94,7 @@ class RetryUploadUseCases {
         }
 
 
-        val uploadResult: Deferred<JobResult> = async { application.readyToUpload(expectedFilePath) }
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
 
         // when the upload completes
         // photoserver callback complete with ok

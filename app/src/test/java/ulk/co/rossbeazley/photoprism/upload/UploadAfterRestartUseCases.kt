@@ -2,7 +2,6 @@ package ulk.co.rossbeazley.photoprism.upload
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.isA
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -57,7 +56,7 @@ class UploadAfterRestartUseCases {
         adapters.fileSystem.flow.emit(expectedFilePath)
 
 
-        adapters = Adapters(
+        val adapters = Adapters(
             fileSystem = Filesystem(),
             auditLogService = adapters.auditLogService,
             jobSystem = CapturingBackgroundJobSystem(),
@@ -65,7 +64,7 @@ class UploadAfterRestartUseCases {
             photoServer = MockPhotoServer(),
         )
 
-        application = PhotoPrismApp(
+        val application = PhotoPrismApp(
             fileSystem = adapters.fileSystem,
             jobSystem = adapters.jobSystem,
             auditLogService = adapters.auditLogService,
@@ -76,7 +75,7 @@ class UploadAfterRestartUseCases {
         )
 
         // when the system is ready to run our job
-        async { application.readyToUpload(expectedFilePath) }
+        async { adapters.jobSystem.runCallback(expectedFilePath) }
 
 
         // then the download is started

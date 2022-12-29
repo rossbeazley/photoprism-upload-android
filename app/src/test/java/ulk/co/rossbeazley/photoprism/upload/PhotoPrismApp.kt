@@ -16,6 +16,7 @@ class PhotoPrismApp(
     private val scope = CoroutineScope(dispatcher)
 
     init {
+        jobSystem.register(::readyToUpload)
         val flow = fileSystem.watch(config.photoDirectory)
         scope.launch {
             flow.collect(::observedPhoto)
