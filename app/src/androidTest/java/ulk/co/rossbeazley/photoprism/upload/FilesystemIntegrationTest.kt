@@ -1,6 +1,5 @@
 package ulk.co.rossbeazley.photoprism.upload
 
-import android.os.FileObserver
 import androidx.test.platform.app.InstrumentationRegistry
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
@@ -18,31 +17,7 @@ class FilesystemIntegrationTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    val filesystem: Filesystem = AndroidFileObserverFilesystem(CoroutineScope(testDispatcher))
-
-    class AndroidFileObserverFilesystem(val dispatcher: CoroutineScope) : Filesystem {
-        var fileObserver: FileObserver? = null
-
-        override fun watch(path: String): Flow<String> {
-            val emptyFlow = MutableSharedFlow<String>()
-            fileObserver = FileObserver1(dispatcher, path, emptyFlow).also { it.startWatching() }
-            return emptyFlow
-        }
-
-        class FileObserver1(
-            private val dispatcher: CoroutineScope,
-            private val path: String,
-            private val emptyFlow: MutableSharedFlow<String>
-        ) : FileObserver(File(path), CREATE or MOVED_TO) {
-            override fun onEvent(p0: Int, file: String?) {
-                if(file?.startsWith(".") == true) return
-                file ?: return
-                dispatcher.launch {
-                    emptyFlow.emit("$path/${file}")
-                }
-            }
-        }
-    }
+    private val filesystem: Filesystem = AndroidFileObserverFilesystem(testDispatcher)
 
     lateinit var observedDir: File
 

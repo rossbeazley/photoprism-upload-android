@@ -4,7 +4,7 @@ import kotlinx.coroutines.*
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 
 class PhotoPrismApp(
-    val fileSystem: Filesystem,
+    val fileSystem: Filesystem = AndroidFileObserverFilesystem(),
     private val jobSystem: CapturingBackgroundJobSystem,
     val auditLogService: CapturingAuditLogService,
     val uploadQueue: UploadQueue,
