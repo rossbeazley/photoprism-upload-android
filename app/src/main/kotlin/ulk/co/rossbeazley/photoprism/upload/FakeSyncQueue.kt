@@ -1,22 +1,22 @@
 package ulk.co.rossbeazley.photoprism.upload
 
-class UploadQueue {
+class FakeSyncQueue : SyncQueue {
     var capturedQueueEntry : UploadQueueEntry? = null
 
-    fun put(queueEntry : UploadQueueEntry) {
+    override fun put(queueEntry : UploadQueueEntry) {
         capturedQueueEntry = queueEntry
         map[queueEntry.filePath] = queueEntry
     }
 
     var removedQueueEntry : UploadQueueEntry? = null
-    fun remove(queueEntry: UploadQueueEntry) {
+    override fun remove(queueEntry: UploadQueueEntry) {
         removedQueueEntry = queueEntry
         map.remove(queueEntry.filePath)
     }
 
     val map : MutableMap<String, UploadQueueEntry> = mutableMapOf()
 
-    fun peek(id: String): UploadQueueEntry {
+    override fun peek(id: String): UploadQueueEntry {
         return map[id]!!
     }
 }

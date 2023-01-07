@@ -7,7 +7,7 @@ class PhotoPrismApp(
     val fileSystem: Filesystem = AndroidFileObserverFilesystem(),
     private val jobSystem: CapturingBackgroundJobSystem,
     val auditLogService: CapturingAuditLogService,
-    val uploadQueue: UploadQueue,
+    val uploadQueue: SyncQueue,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     val photoServer: PhotoServer,
     val config: Config,

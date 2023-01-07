@@ -18,7 +18,7 @@ class UploadUseCases {
         val fileSystem: FakeFilesystem,
         val auditLogService: CapturingAuditLogService,
         val jobSystem: CapturingBackgroundJobSystem,
-        val uploadQueue: UploadQueue,
+        val uploadQueue: FakeSyncQueue,
         val photoServer: MockPhotoServer,
     )
 
@@ -37,7 +37,7 @@ class UploadUseCases {
             fileSystem = FakeFilesystem(),
             auditLogService = CapturingAuditLogService(),
             jobSystem = CapturingBackgroundJobSystem(),
-            uploadQueue = UploadQueue(),
+            uploadQueue = FakeSyncQueue(),
             photoServer = MockPhotoServer(),
         )
         application = PhotoPrismApp(

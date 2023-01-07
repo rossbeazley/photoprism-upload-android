@@ -67,6 +67,6 @@ Audit Logs:
 
 Next up:
 ✓ - rework callback for work manager to promote to explicit public primary port
- - write adapter for file watcher service
+✓ - write adapter for file watcher service
  - write adapter to persist sync queue
  - implement work manager integration
