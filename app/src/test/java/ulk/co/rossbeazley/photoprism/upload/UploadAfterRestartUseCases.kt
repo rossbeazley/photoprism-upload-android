@@ -14,7 +14,7 @@ import kotlin.coroutines.resume
 class UploadAfterRestartUseCases {
 
     class Adapters(
-        val fileSystem: Filesystem,
+        val fileSystem: FakeFilesystem,
         val auditLogService: CapturingAuditLogService,
         val jobSystem: CapturingBackgroundJobSystem,
         val uploadQueue: UploadQueue,
@@ -33,7 +33,7 @@ class UploadAfterRestartUseCases {
         expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
         config = mutableMapOf<String, String>("directory" to "any-directory-path")
         adapters = Adapters(
-            fileSystem = Filesystem(),
+            fileSystem = FakeFilesystem(),
             auditLogService = CapturingAuditLogService(),
             jobSystem = CapturingBackgroundJobSystem(),
             uploadQueue = UploadQueue(),
@@ -57,7 +57,7 @@ class UploadAfterRestartUseCases {
 
 
         val adapters = Adapters(
-            fileSystem = Filesystem(),
+            fileSystem = FakeFilesystem(),
             auditLogService = adapters.auditLogService,
             jobSystem = CapturingBackgroundJobSystem(),
             uploadQueue = adapters.uploadQueue,

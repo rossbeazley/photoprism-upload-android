@@ -14,7 +14,7 @@ import kotlin.coroutines.resume
 class RetryUploadUseCases {
 
     class Adapters(
-        val fileSystem: Filesystem,
+        val fileSystem: FakeFilesystem,
         val auditLogService: CapturingAuditLogService,
         val jobSystem: CapturingBackgroundJobSystem,
         val uploadQueue: UploadQueue,
@@ -33,7 +33,7 @@ class RetryUploadUseCases {
     fun build() {
         expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
         adapters = Adapters(
-            fileSystem = Filesystem(),
+            fileSystem = FakeFilesystem(),
             auditLogService = CapturingAuditLogService(),
             jobSystem = CapturingBackgroundJobSystem(),
             uploadQueue = UploadQueue(),

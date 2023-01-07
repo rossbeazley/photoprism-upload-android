@@ -15,7 +15,7 @@ import kotlin.coroutines.resume
 class UploadUseCases {
 
     class Adapters(
-        val fileSystem: Filesystem,
+        val fileSystem: FakeFilesystem,
         val auditLogService: CapturingAuditLogService,
         val jobSystem: CapturingBackgroundJobSystem,
         val uploadQueue: UploadQueue,
@@ -34,7 +34,7 @@ class UploadUseCases {
         expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
         config = mutableMapOf<String, String>("directory" to "any-directory-path")
         adapters = Adapters(
-            fileSystem = Filesystem(),
+            fileSystem = FakeFilesystem(),
             auditLogService = CapturingAuditLogService(),
             jobSystem = CapturingBackgroundJobSystem(),
             uploadQueue = UploadQueue(),
@@ -52,12 +52,12 @@ class UploadUseCases {
     }
 
     @Test // TODO missing config test
-    fun photoDirectoryIsObserved() {
+    fun appInitialisation() {
         // given the configuration exists
         val expectedPath = "any-directory-path"
 
         // then the directory is observered
-        assertThat(adapters.fileSystem.watchedPath, equalTo(expectedPath))
+        assertThat(adapters.fileSystem.watchedPath, equalTo(expectedPath)) // CONTRACT (file system) will watch configured directory
 
         // and an audit log entry is created // TODO rework this so we can observe the queue without caring how its implemented
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
@@ -67,7 +67,7 @@ class UploadUseCases {
     @Test
     fun photoUploadScheduled() = runTest(testDispatcher) {
         // when a photo is found
-        adapters.fileSystem.flow.emit(expectedFilePath)
+        adapters.fileSystem.flow.emit(expectedFilePath) // CONTRACT (file system) will emit flow of fil configured directory
 
         // then the upload job is scheduled
         assertThat(adapters.jobSystem.jobFilePath, equalTo(expectedFilePath))
