@@ -14,9 +14,9 @@ class CapturingBackgroundJobSystem {
         readyCallback = callback
     }
 
+    // TODO could we make this return async? this fake needs context that way
     suspend fun runCallback(forFilePath : String? = jobFilePath): JobResult {
         forFilePath ?: throw AssertionError("Ready callback not registered")
         return readyCallback(forFilePath)
     }
-
 }

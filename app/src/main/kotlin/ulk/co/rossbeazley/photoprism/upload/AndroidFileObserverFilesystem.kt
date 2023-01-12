@@ -22,14 +22,14 @@ class AndroidFileObserverFilesystem(testDispatcher: CoroutineDispatcher = Dispat
     }
 
     class FlowingPathObserver(
-        private val dispatcher: CoroutineScope,
+        private val scope: CoroutineScope,
         private val path: String,
         private val emptyFlow: MutableSharedFlow<String>
     ) : FileObserver(File(path), CREATE or MOVED_TO) {
         override fun onEvent(p0: Int, file: String?) {
             file ?: return
             if(file.startsWith(".")) return
-            dispatcher.launch { emptyFlow.emit("$path/${file}") }
+            scope.launch { emptyFlow.emit("$path/${file}") }
         }
     }
 }

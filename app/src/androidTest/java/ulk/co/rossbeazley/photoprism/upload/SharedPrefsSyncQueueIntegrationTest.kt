@@ -40,6 +40,10 @@ class SharedPrefsSyncQueueIntegrationTest {
             override fun peek(id: String): UploadQueueEntry {
              return ScheduledFileUpload(id,sharedPrefs.getInt(id,0))
             }
+
+            override fun all(): List<UploadQueueEntry> {
+                TODO("Not yet implemented")
+            }
         }
 
         val attemptCount = Random.nextInt()

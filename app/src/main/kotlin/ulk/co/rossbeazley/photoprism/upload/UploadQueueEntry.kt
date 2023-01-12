@@ -28,7 +28,10 @@ data class RetryFileUpload(override val filePath: String, override val attemptCo
     override fun willAttemptUpload() = RunningFileUpload(filePath, attemptCount = attemptCount + 1)
 }
 
-data class FailedFileUpload(override val filePath: String, override val attemptCount:Int = 0) :
+data class FailedFileUpload(override val filePath: String) :
     UploadQueueEntry() {
+    override val attemptCount: Int
+        get() = 0
+
     override fun willAttemptUpload() = RunningFileUpload(filePath, attemptCount = 1)
 }

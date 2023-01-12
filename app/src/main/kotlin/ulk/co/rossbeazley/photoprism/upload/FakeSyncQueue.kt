@@ -19,4 +19,8 @@ class FakeSyncQueue : SyncQueue {
     override fun peek(id: String): UploadQueueEntry {
         return map[id]!!
     }
+
+    override fun all(): List<UploadQueueEntry> {
+        return map.values.toList()
+    }
 }

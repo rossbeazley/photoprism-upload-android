@@ -2,9 +2,10 @@ package ulk.co.rossbeazley.photoprism.upload
 
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class MockPhotoServer : PhotoServer {
+class MockPhotoServer(var autoComplete : Boolean = false) : PhotoServer {
     var path: String = "NO UPLOAD"
 
     override fun doUpload(path: String): Result<Unit> {
@@ -18,6 +19,7 @@ class MockPhotoServer : PhotoServer {
         this.path = path
         return suspendCoroutine { continuation: Continuation<Result<Unit>> ->
             capturedContinuation = continuation
+            if(autoComplete) continuation.resume(Result.success(Unit))
         }
     }
 }
