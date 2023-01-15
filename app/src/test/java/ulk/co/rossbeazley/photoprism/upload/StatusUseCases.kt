@@ -160,7 +160,7 @@ class StatusUseCases {
         //when new file is synced
         adapters.fileSystem.flow.emit("new") // CONTRACT (file system) will emit flow of fil configured directory
         async { adapters.jobSystem.runCallback("new") }
-        adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
+        adapters.photoServer.currentUploadFails()
 
         //then we see the new one (or is it a list or something)
         val expectedOobservedSyncEvents = listOf(
@@ -168,7 +168,6 @@ class StatusUseCases {
             NewEvent(ScheduledFileUpload("new")),
             NewEvent(RunningFileUpload("new", 1)),
             NewEvent(RetryFileUpload("new", 1)),
-
         )
 
         assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
@@ -192,10 +191,10 @@ class StatusUseCases {
         //when new file is synced
         adapters.fileSystem.flow.emit("new") // CONTRACT (file system) will emit flow of fil configured directory
         async { adapters.jobSystem.runCallback("new") }
-        adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
+        adapters.photoServer.currentUploadFails()
 
         async { adapters.jobSystem.runCallback("new") }
-        adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
+        adapters.photoServer.currentUploadFails()
 
         //then we see the new one (or is it a list or something)
         val expectedOobservedSyncEvents = listOf(
@@ -210,4 +209,69 @@ class StatusUseCases {
         assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
     }
 
+    // download completes
+
+    @Test
+    fun observeCompletion() = runTest(testDispatcher) {
+        //given observing some items
+        adapters.photoServer.autoComplete = false
+        adapters.uploadQueue.apply {
+            put(ScheduledFileUpload("one"))
+        }
+        val job = async {
+            val observedEvents = mutableListOf<NewEvent>()
+            application.observeSyncEvents()
+                .take(4)
+                .collect(observedEvents::add)
+            observedEvents
+        }
+
+        //when new file is synced
+        adapters.fileSystem.flow.emit("new") // CONTRACT (file system) will emit flow of fil configured directory
+        async { adapters.jobSystem.runCallback("new") }
+        adapters.photoServer.currentUploadCompletes()
+
+        //then we see the new one (or is it a list or something)
+        val expectedOobservedSyncEvents = listOf(
+            NewEvent(ScheduledFileUpload("one")),
+            NewEvent(ScheduledFileUpload("new")),
+            NewEvent(RunningFileUpload("new", 1)),
+            NewEvent(CompletedFileUpload("new")),
+        )
+
+        assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
+    }
+
+    @Test
+    fun observePostCompletion() = runTest(testDispatcher) {
+        //given observing some items
+        adapters.photoServer.autoComplete = false
+        adapters.uploadQueue.apply {
+            put(ScheduledFileUpload("one"))
+        }
+
+        //when new file is synced
+        adapters.fileSystem.flow.emit("new") // CONTRACT (file system) will emit flow of fil configured directory
+        async { adapters.jobSystem.runCallback("new") }
+        adapters.photoServer.currentUploadCompletes()
+
+
+        val job = async {
+            val observedEvents = mutableListOf<NewEvent>()
+            application.observeSyncEvents()
+                .take(2)
+                .collect(observedEvents::add)
+            observedEvents
+        }
+
+        adapters.fileSystem.flow.emit("new2")
+
+        //then we see the new one (or is it a list or something)
+        val expectedOobservedSyncEvents = listOf(
+            NewEvent(ScheduledFileUpload("one")),
+            NewEvent(ScheduledFileUpload("new2")),
+         )
+
+        assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
+    }
 }

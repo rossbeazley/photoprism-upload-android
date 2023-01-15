@@ -6,8 +6,12 @@ sealed class UploadQueueEntry {
     abstract fun willAttemptUpload(): RunningFileUpload
 }
 
-data class ScheduledFileUpload(override val filePath: String, override val attemptCount:Int = 0) :
+data class ScheduledFileUpload(override val filePath: String) :
     UploadQueueEntry() {
+
+    override val attemptCount: Int
+        get() = 0
+
     override fun willAttemptUpload() = RunningFileUpload(filePath,1)
 }
 
@@ -34,4 +38,14 @@ data class FailedFileUpload(override val filePath: String) :
         get() = 0
 
     override fun willAttemptUpload() = RunningFileUpload(filePath, attemptCount = 1)
+}
+
+
+data class CompletedFileUpload(override val filePath: String) :
+    UploadQueueEntry() {
+
+    override val attemptCount: Int
+        get() = 0
+
+    override fun willAttemptUpload() = RunningFileUpload(filePath, attemptCount = attemptCount + 1)
 }

@@ -3,6 +3,7 @@ This will watch the camera folder and use webdav to upload images
 Sort of a task list:
 
 ✓ - done
+✇ - doing
 ❌ - dropped
 😎 - re-work
 
@@ -68,5 +69,6 @@ Audit Logs:
 Next up:
 ✓ - rework callback for work manager to promote to explicit public primary port
 ✓ - write adapter for file watcher service
+✓ - write status event observerable flow
  - write adapter to persist sync queue
  - implement work manager integration

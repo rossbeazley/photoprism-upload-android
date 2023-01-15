@@ -56,6 +56,7 @@ class PhotoPrismApp(
     ) = when {
         result.isSuccess -> {
             uploadQueue.remove(queueEntry)
+            observer?.emit(NewEvent(CompletedFileUpload(queueEntry.filePath)))
             JobResult.Success
         }
         result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
