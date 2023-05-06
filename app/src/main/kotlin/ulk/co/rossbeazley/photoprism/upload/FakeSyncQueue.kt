@@ -23,4 +23,8 @@ class FakeSyncQueue : SyncQueue {
     override fun all(): List<UploadQueueEntry> {
         return map.values.toList()
     }
+
+    override fun removeAll() {
+        TODO("Not yet implemented")
+    }
 }

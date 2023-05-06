@@ -1,6 +1,6 @@
 package ulk.co.rossbeazley.photoprism.upload
 
-sealed class UploadQueueEntry {
+sealed class    UploadQueueEntry {
     abstract val attemptCount: Int
     abstract val filePath: String
     abstract fun willAttemptUpload(): RunningFileUpload
