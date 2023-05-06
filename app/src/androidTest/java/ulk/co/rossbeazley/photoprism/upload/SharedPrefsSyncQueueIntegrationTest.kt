@@ -1,6 +1,5 @@
 package ulk.co.rossbeazley.photoprism.upload
 
-import android.content.Context.MODE_PRIVATE
 import androidx.test.platform.app.InstrumentationRegistry
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
@@ -20,85 +19,7 @@ class SharedPrefsSyncQueueIntegrationTest {
 
     @Before
     fun createFolderInCache() {
-        queue = SharedPrefsSyncQueue(basename)
-    }
-
-    class SharedPrefsSyncQueue(val basename: String = "boop") : SyncQueue {
-
-        private val sharedPrefs =
-            InstrumentationRegistry.getInstrumentation().context.getSharedPreferences(
-                basename,
-                MODE_PRIVATE
-            )
-
-        private val sharedPrefs2 =
-            InstrumentationRegistry.getInstrumentation().context.getSharedPreferences(
-                "${basename}2",
-                MODE_PRIVATE
-            )
-
-        override fun put(queueEntry: UploadQueueEntry) {
-            sharedPrefs.edit()
-                .putString(queueEntry.filePath, typeNameFrom(queueEntry))
-                .commit()
-
-            sharedPrefs2.edit()
-                .putInt(queueEntry.filePath, queueEntry.attemptCount)
-                .commit()
-        }
-
-        private fun typeNameFrom(queueEntry: UploadQueueEntry): String {
-            return when (queueEntry) {
-                is CompletedFileUpload -> "CompletedFileUpload"
-                is FailedFileUpload -> "FailedFileUpload"
-                is RetryFileUpload -> "RetryFileUpload"
-                is RunningFileUpload -> "RunningFileUpload"
-                is ScheduledFileUpload -> "ScheduledFileUpload"
-            }
-        }
-
-        private fun typeFromName(
-            queueEntryName: String,
-            path: String,
-            attempt: Int
-        ): UploadQueueEntry {
-            return when (queueEntryName) {
-                "CompletedFileUpload" -> CompletedFileUpload(path)
-                "FailedFileUpload" -> FailedFileUpload(path)
-                "RetryFileUpload" -> RetryFileUpload(path, attempt)
-                "RunningFileUpload" -> RunningFileUpload(path, attempt)
-                "ScheduledFileUpload" -> ScheduledFileUpload(path)
-                else -> TODO()
-            }
-        }
-
-        override fun remove(queueEntry: UploadQueueEntry) {
-            sharedPrefs.edit()
-                .remove(queueEntry.filePath)
-                .commit()
-        }
-
-        override fun peek(id: String): UploadQueueEntry {
-            val string = sharedPrefs.getString(id, null) ?: "unknown"
-            val attempt = sharedPrefs2.getInt(id, 0)
-            return typeFromName(string, id, attempt)
-        }
-
-        override fun all(): List<UploadQueueEntry> {
-            val result: List<UploadQueueEntry> = sharedPrefs.all.map {
-                val path = it.key ?: "unknown"
-                val type = it.value as String
-                val attempt = sharedPrefs2.getInt(path, 0)
-                val entry: UploadQueueEntry = typeFromName(type, path, attempt)
-                entry
-            }
-            return result
-        }
-
-        override fun removeAll() {
-            sharedPrefs.edit().clear().commit()
-
-        }
+        queue = SharedPrefsSyncQueue(basename, InstrumentationRegistry.getInstrumentation().context)
     }
 
     val filePath = "filepath${System.nanoTime()}"
@@ -140,7 +61,10 @@ class SharedPrefsSyncQueueIntegrationTest {
     @Test
     fun savedScheduledFileUploadEntrySurvivesRestart() = runTest(testDispatcher) {
         savedScheduledFileUploadEntry()
-        val queue = SharedPrefsSyncQueue(basename)
+        val queue = SharedPrefsSyncQueue(
+            basename,
+            InstrumentationRegistry.getInstrumentation().context
+        )
         val expectedEntry = ScheduledFileUpload(filePath)
         val peekedEntry = queue.peek(filePath)
         assertThat(peekedEntry, equalTo(expectedEntry))
@@ -148,10 +72,16 @@ class SharedPrefsSyncQueueIntegrationTest {
 
     @Test
     fun queuesCanBeTheirOwnUnit() = runTest(testDispatcher) {
-        val queue = SharedPrefsSyncQueue("one")
+        val queue = SharedPrefsSyncQueue(
+            "one",
+            InstrumentationRegistry.getInstrumentation().context
+        )
         queue.put(RetryFileUpload(filePath, 1))
 
-        val queue2 = SharedPrefsSyncQueue("two")
+        val queue2 = SharedPrefsSyncQueue(
+            "two",
+            InstrumentationRegistry.getInstrumentation().context
+        )
         queue2.put(RetryFileUpload(filePath, 2))
 
         val expectedEntry = RetryFileUpload(filePath, 1)

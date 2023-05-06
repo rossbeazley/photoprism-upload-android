@@ -36,9 +36,9 @@ later:
 
 System Collaborators:
 
-File watcher service:
+File watcher service: ✓
  collaborates with upload service
- filewatcher adapter plugs into this  <--- DO NEXT
+ filewatcher adapter plugs into this 
  
 
 Foreground service:
@@ -51,11 +51,11 @@ Upload service:
  collaborates with work manager to run work in background
  uses webdav in some way
 
-Sync queue:
+Sync queue: ✓
  has a View
  can retry an item - removes from queue as its not failed
  can enqueue a failed item
- needs persistence <--- DO NEXT
+ needs persistence
 
 Audit Logs:
  has a view
@@ -70,5 +70,8 @@ Next up:
 ✓ - rework callback for work manager to promote to explicit public primary port
 ✓ - write adapter for file watcher service
 ✓ - write status event observerable flow
- - write adapter to persist sync queue
+✓ - write adapter to persist sync queue
  - implement work manager integration
+ - convert capturing audit log service to AuditRepo (maybe implement adapter for now)
+ - do upload service intergation tests against test service (needs deploying)
+ - complete rest of audit logs including screen
