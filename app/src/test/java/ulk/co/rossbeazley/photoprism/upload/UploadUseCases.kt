@@ -107,7 +107,7 @@ class UploadUseCases {
     fun photoUploadCompletes() = runTest(testDispatcher) {
         //given a photo is being uploaded
         adapters.fileSystem.flow.emit(expectedFilePath)
-        val uploadResult = async { adapters.jobSystem.runCallback() }
+        val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
 
         // when the upload completes
         // photoserver callback complete with ok
