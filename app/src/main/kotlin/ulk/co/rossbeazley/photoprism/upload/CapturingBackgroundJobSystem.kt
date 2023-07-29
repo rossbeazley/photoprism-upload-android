@@ -1,12 +1,14 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import java.lang.AssertionError
+import java.util.*
 
 class CapturingBackgroundJobSystem : BackgroundJobSystem {
 
     var jobFilePath : String? = null
-    override fun schedule(forPath: String) {
+    override fun schedule(forPath: String) : UUID {
         jobFilePath = forPath
+        return UUID.randomUUID()
     }
 
     var readyCallback: suspend (String) -> JobResult = { _-> JobResult.Failure }

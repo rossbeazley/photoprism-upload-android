@@ -2,6 +2,7 @@ package ulk.co.rossbeazley.photoprism.upload
 
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.asFlow
 import kotlinx.coroutines.test.runTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.*
@@ -10,10 +11,13 @@ import androidx.work.testing.WorkManagerTestInitHelper
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import org.junit.Before
 import org.junit.Test
-import java.util.*
 import kotlinx.coroutines.future.asCompletableFuture
+import java.util.*
 
 class BackgroundJobSystemIntegrationTest {
 
@@ -24,7 +28,7 @@ class BackgroundJobSystemIntegrationTest {
 
         private lateinit var cb: suspend (String) -> JobResult
 
-        override fun schedule(forPath: String) {
+        override fun schedule(forPath: String): UUID {
             val request = OneTimeWorkRequestBuilder<JobSystemWorker>()
                 .setInputData(workDataOf("A" to forPath))
                 .addTag(forPath)
@@ -32,6 +36,7 @@ class BackgroundJobSystemIntegrationTest {
 
             val instance = WorkManager.getInstance(context)
             instance.enqueue(request)
+            return request.id
         }
 
         class JobSystemWorker(
@@ -49,6 +54,8 @@ class BackgroundJobSystemIntegrationTest {
                 }
                 val r: JobResult = job.asCompletableFuture().get()
                 return when (r) {
+                    JobResult.Retry -> Result.retry()
+                    JobResult.Failure -> Result.failure()
                     else -> Result.success()
                 }
             }
@@ -77,7 +84,7 @@ class BackgroundJobSystemIntegrationTest {
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(Log.DEBUG)
             .setExecutor(SynchronousExecutor())
-            .setWorkerFactory(backgroundJobSystem)  //TOSO work this out!
+            .setWorkerFactory(backgroundJobSystem)  //TODO work this circular ref out!
             .build()
 
         // Initialize WorkManager for instrumentation tests.
@@ -86,6 +93,8 @@ class BackgroundJobSystemIntegrationTest {
 
     @Test
     fun aRunningJobSucceeds() = runTest {
+        val pathToDownload = "the-file-path"
+
         var jobPath = ""
         val callback: suspend (String) -> JobResult = {
             jobPath = it
@@ -93,24 +102,77 @@ class BackgroundJobSystemIntegrationTest {
         }
         backgroundJobSystem.register(callback)
 
-        backgroundJobSystem.schedule("the-file-path")
+        backgroundJobSystem.schedule(pathToDownload)
 
         val workManager = WorkManager.getInstance(context)
 
-        delay(3000)
-
-        // TODO - get live data and await SUCCEEDED
-        workManager.getWorkInfosByTagLiveData("the-file-path")
+        //delay(3000)
+        workManager.getWorkInfosByTagLiveData(pathToDownload) // todo broken encapsulation
+            .asFlow()
+            .filter { it.filter { it.state == WorkInfo.State.SUCCEEDED }.isNotEmpty() }
+            //.map { it.filter { it.state == WorkInfo.State.SUCCEEDED }.first() }
+            .first()
 
         //assertThat(workInfo.state, equalTo(WorkInfo.State.SUCCEEDED))
-        assertThat(jobPath, equalTo("the-file-path"))
+        assertThat(jobPath, equalTo(pathToDownload))
     }
 
     @Test
-    fun aRunningJobIsAskedToRetry() {
+    fun aRunningJobIsAskedToRetry() = runTest {
+        val pathToDownload = "the-file-path"
+
+        var jobPath = ""
+        val callback: suspend (String) -> JobResult = {
+            if (jobPath == it) {
+                JobResult.Success
+            } else {
+                jobPath = it
+                JobResult.Retry
+            }
+        }
+        backgroundJobSystem.register(callback)
+
+        val uuid = backgroundJobSystem.schedule(pathToDownload)
+
+        val workManager = WorkManager.getInstance(context)
+
+//        WorkManagerTestInitHelper.getTestDriver(context)?.let {
+//            it.setInitialDelayMet(uuid)
+//            it.setAllConstraintsMet(uuid)
+//            //it.setPeriodDelayMet(uuid)
+//        }
+
+        //delay(3000)
+        workManager.getWorkInfosByTagLiveData(pathToDownload) // todo broken encapsulation
+            .asFlow()
+            .filter { it.filter { it.state == WorkInfo.State.ENQUEUED }.isNotEmpty() }
+            .first()
+
+        //assertThat(workInfo.state, equalTo(WorkInfo.State.SUCCEEDED))
+        assertThat(jobPath, equalTo(pathToDownload))
     }
 
     @Test
-    fun aRunningJobFails() {
+    fun aRunningJobFails() = runTest {
+        val pathToDownload = "the-file-path"
+
+        var jobPath = ""
+        val callback: suspend (String) -> JobResult = {
+            jobPath = it
+            JobResult.Failure
+        }
+        backgroundJobSystem.register(callback)
+
+        backgroundJobSystem.schedule(pathToDownload)
+
+        val workManager = WorkManager.getInstance(context)
+        workManager.getWorkInfosByTagLiveData(pathToDownload) // todo broken encapsulation
+            .asFlow()
+            .filter { it.filter { it.state == WorkInfo.State.FAILED }.isNotEmpty() }
+            .first()
+
+        //assertThat(workInfo.state, equalTo(WorkInfo.State.SUCCEEDED))
+        assertThat(jobPath, equalTo(pathToDownload))
     }
+
 }
