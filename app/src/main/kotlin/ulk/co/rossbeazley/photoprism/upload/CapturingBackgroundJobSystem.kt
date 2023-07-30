@@ -6,9 +6,9 @@ import java.util.*
 class CapturingBackgroundJobSystem : BackgroundJobSystem {
 
     var jobFilePath : String? = null
-    override fun schedule(forPath: String) : UUID {
+    override fun schedule(forPath: String) : String {
         jobFilePath = forPath
-        return UUID.randomUUID()
+        return forPath
     }
 
     var readyCallback: suspend (String) -> JobResult = { _-> JobResult.Failure }

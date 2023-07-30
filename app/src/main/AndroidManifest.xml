@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="ulk.co.rossbeazley.photoprism.upload">
 
-
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -46,14 +45,18 @@
             android:authorities="ulk.co.rossbeazley.photoprism.upload.androidx-startup"
             android:exported="false"
             tools:node="merge">
-            <!-- If you are using androidx.startup to initialize other components -->
             <meta-data
-                android:name="androidx.work.WorkManagerInitializer"
+                android:name="ulk.co.rossbeazley.photoprism.upload.WorkManagerBackgroundJobSystemInitialiser"
+                android:value="androidx.startup"
+                tools:node="remove" />
+            <meta-data
+                android:name="ulk.co.rossbeazley.photoprism.upload.WorkManagerConfigInitialiser"
+                android:value="androidx.startup"
+                tools:node="remove" />
+            <meta-data
+                android:name="ulk.co.rossbeazley.photoprism.upload.WorkManagerInitialiser"
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
-
-
     </application>
-
 </manifest>
