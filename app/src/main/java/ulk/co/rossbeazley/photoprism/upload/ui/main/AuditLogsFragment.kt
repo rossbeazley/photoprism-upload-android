@@ -8,9 +8,14 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
+import androidx.startup.AppInitializer
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import okhttp3.internal.wait
+import ulk.co.rossbeazley.photoprism.upload.AppSingleton
+import ulk.co.rossbeazley.photoprism.upload.NewEvent
 import ulk.co.rossbeazley.photoprism.upload.R
+import ulk.co.rossbeazley.photoprism.upload.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 
 class AuditLogsFragment : Fragment() {
@@ -24,6 +29,7 @@ class AuditLogsFragment : Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        // TODO inject
         auditRepository = AuditRepository(GlobalScope, preferences)
         setHasOptionsMenu(true)
     }
@@ -31,12 +37,24 @@ class AuditLogsFragment : Fragment() {
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
         i.inflate(R.layout.fragment_main, c, false)
 
+    var events = ""
+    var logs = ""
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val findViewById = view.findViewById<TextView>(R.id.message)
+        val findViewById = view.findViewById<TextView>(R.id.message) ?: return
         lifecycleScope.launch {
             auditRepository.observeLogs().collect {
-                findViewById?.text = it
+                logs = it
+                findViewById.text = events + logs
+
             }
+
+            (requireContext().applicationContext as AppSingleton)
+                .photoPrismApp?.observeSyncEvents()?.collect { newevent: NewEvent ->
+                    events += newevent
+                    findViewById.text = events + logs
+
+                }
         }
     }
 
@@ -45,11 +63,21 @@ class AuditLogsFragment : Fragment() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
+        return when (item.itemId) {
             R.id.clearlogs -> {
                 auditRepository.clearAll()
+                auditRepository.log("Cleared logs")
                 true
             }
+
+            R.id.clearwork -> {
+                val workManager = AppInitializer.getInstance(requireContext())
+                    .initializeComponent(WorkManagerInitialiser::class.java)
+                workManager.cancelAllWork()
+                auditRepository.log("Cleared work manager")
+                true
+            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

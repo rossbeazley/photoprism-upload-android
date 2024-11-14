@@ -71,7 +71,11 @@ Next up:
 ✓ - write adapter for file watcher service
 ✓ - write status event observerable flow
 ✓ - write adapter to persist sync queue
- - implement work manager integration
+✓ - implement work manager integration
  - convert capturing audit log service to AuditRepo (maybe implement adapter for now)
  - do upload service intergation tests against test service (needs deploying)
  - complete rest of audit logs including screen
+ - wire everything together
+ - implement keep alive task
+
+ - WORK OUT WHATS LEFT, DRAW A DIAGRAM

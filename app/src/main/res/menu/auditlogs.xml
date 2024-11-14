@@ -6,4 +6,10 @@
         android:icon="@drawable/ic_auditlog_delete"
         android:title="delete logs"
         app:showAsAction="always"/>
+
+    <item
+        android:id="@+id/clearwork"
+        android:icon="@drawable/ic_workmanager_clear_24"
+        android:title="clear workmanager"
+        app:showAsAction="always"/>
 </menu>

@@ -4,14 +4,14 @@ plugins {
 }
 
 android {
-    compileSdk 33
+    compileSdk 34
 
     Properties properties = new Properties()
     properties.load(project.rootProject.file("local.properties").newDataInputStream())
 
     defaultConfig {
         applicationId "ulk.co.rossbeazley.photoprism.upload"
-        minSdk 31
+        minSdk 33
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -35,9 +35,6 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    aaptOptions {
-        noCompress 'png'
-    }
 
     kotlinOptions {
         jvmTarget = '1.8'
@@ -55,13 +52,17 @@ android {
             }
         }
     }
+    namespace 'ulk.co.rossbeazley.photoprism.upload'
+    androidResources {
+        noCompress 'png'
+    }
 }
 
 dependencies {
 
     //implementation 'com.github.thegrizzlylabs:sardine-android:0.8'
     implementation 'com.github.lookfirst:sardine:5.10'
-    implementation ('com.github.bitfireAT:dav4jvm:2.1.4') {
+    implementation ('com.github.bitfireAT:dav4jvm:2.2.1') {
         exclude group: 'junit', module: 'junit'
     }
 

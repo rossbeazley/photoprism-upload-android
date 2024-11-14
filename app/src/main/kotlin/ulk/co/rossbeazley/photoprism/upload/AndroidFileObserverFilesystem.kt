@@ -13,23 +13,47 @@ class AndroidFileObserverFilesystem(testDispatcher: CoroutineDispatcher = Dispat
     testDispatcher
 )
 ) : Filesystem {
-    var fileObserver: FileObserver? = null
+    var fileObserver: FlowingPathObserver? = null
 
     override fun watch(path: String): Flow<String> {
-        val emptyFlow = MutableSharedFlow<String>()
-        fileObserver = FlowingPathObserver(scope, path, emptyFlow).also { it.startWatching() }
-        return emptyFlow
+        if(fileObserver!=null) {
+            log("ALREADY WATCHING!!!")
+            return fileObserver!!.emptyFlow
+        }
+        val flowingPathObserver = FlowingPathObserver(scope, path)
+        fileObserver = flowingPathObserver.also { it.startWatching() }
+        log("Watching $path")
+        return flowingPathObserver.emptyFlow
     }
 
     class FlowingPathObserver(
         private val scope: CoroutineScope,
         private val path: String,
-        private val emptyFlow: MutableSharedFlow<String>
+        internal val emptyFlow: MutableSharedFlow<String> = MutableSharedFlow()
     ) : FileObserver(File(path), CREATE or MOVED_TO) {
         override fun onEvent(p0: Int, file: String?) {
+            log("File watch event $p0 $file")
             file ?: return
             if(file.startsWith(".")) return
-            scope.launch { emptyFlow.emit("$path/${file}") }
+            scope.launch {
+                try {
+                    emptyFlow.emit("$path/${file}")
+                    log("emitted $path/${file}")
+                } catch (e : Exception) {
+                    log("Exception During emit $path/${file} ${e.message}")
+                }
+            }
+            log("File watch event done")
+        }
+
+        override fun stopWatching() {
+            log("File watcher stop watching")
+            super.stopWatching()
+        }
+
+        override fun finalize() {
+            log("File watcher finalize")
+            super.finalize()
         }
     }
 }

@@ -11,14 +11,12 @@ import java.time.Instant
 import java.util.*
 
 class KeepaliveTask(
-    private val appContext: Context,
+    appContext: Context,
     workerParams: WorkerParameters,
-    private val auditRepository: AuditRepository
-) :
-    Worker(appContext, workerParams) {
+) : Worker(appContext, workerParams) {
 
     override fun doWork(): Result {
-        auditRepository.log("keepalive ${Date().toGMTString()}")
+        println("keepalive ${Date().toGMTString()}")
         return Result.success()
     }
 }

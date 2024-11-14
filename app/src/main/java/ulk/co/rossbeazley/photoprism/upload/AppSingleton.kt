@@ -8,84 +8,62 @@ import android.graphics.Color
 import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
+import androidx.startup.AppInitializer
 import androidx.work.*
 import kotlinx.coroutines.GlobalScope
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
+import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.WebdavPutTask
 import ulk.co.rossbeazley.photoprism.upload.photoserver.buildPhotoServer
 import java.io.File
 import java.util.concurrent.TimeUnit
 
 
-class AppSingleton : Application(), Configuration.Provider {
+class AppSingleton : Application() {
 
     private val auditRepository : AuditRepository by lazy { AuditRepository(
         GlobalScope,
         PreferenceManager.getDefaultSharedPreferences(this)
     ) }
-    private val workManager : WorkManager by lazy { WorkManager.getInstance(this) }
 
-    override fun getWorkManagerConfiguration() = Configuration.Builder()
-        .setMinimumLoggingLevel(Log.INFO)
-        .setWorkerFactory(buildDelegatingWorkerFactory())
-        .build()
-
-    private fun buildDelegatingWorkerFactory(): DelegatingWorkerFactory {
-        val delegatingWorkerFactory = DelegatingWorkerFactory()
-        delegatingWorkerFactory.addFactory(object : WorkerFactory() {
-            override fun createWorker(
-                appContext: Context,
-                workerClassName: String,
-                workerParameters: WorkerParameters
-            ): ListenableWorker? {
-                return when (workerClassName) {
-                    LOGGINGTask::class.java.name -> LOGGINGTask(
-                        appContext,
-                        workerParameters,
-                        auditRepository
-                    )
-                    KeepaliveTask::class.java.name -> KeepaliveTask(
-                        appContext,
-                        workerParameters,
-                        auditRepository
-                    )
-                    WebdavPutTask::class.java.name -> WebdavPutTask(
-                        appContext,
-                        workerParameters,
-                        buildPhotoServer()
-                        )
-                    else -> null
-                }
-            }
-        })
-        return delegatingWorkerFactory
-    }
-
-    lateinit var watch: PhotosDirectoryObserver
+    var photoPrismApp: PhotoPrismApp? = null
 
     override fun onCreate() {
-        super.onCreate()
-        createNotificationChannel()
-        val dir = File("/storage/emulated/0/DCIM/Camera")
-        watch = PhotosDirectoryObserver(dir, workManager)
-        watch.startWatching()
 
-        startKeepAlive()
+        super.onCreate()
+
+        val workManager = AppInitializer.getInstance(this)
+            .initializeComponent(WorkManagerInitialiser::class.java)
+
+        val workManagerBackgroundJobSystem = AppInitializer.getInstance(this)
+            .initializeComponent(WorkManagerBackgroundJobSystemInitialiser::class.java)
+
+        photoPrismApp = PhotoPrismApp(
+            fileSystem = AndroidFileObserverFilesystem(),
+            jobSystem = workManagerBackgroundJobSystem,
+            photoServer = buildPhotoServer(),
+            config = Config(photoDirectory = "/storage/emulated/0/DCIM/Camera", maxUploadAttempts = 10),
+            uploadQueue = SharedPrefsSyncQueue(context = this),
+            auditLogService = auditRepository,
+        )
+
         auditRepository.log("Application onCreate")
     }
 
     private fun startKeepAlive() {
+        val uniqueWorkName = "keepalive"
         val keepalive = PeriodicWorkRequestBuilder<KeepaliveTask>(
             repeatInterval = 1,
             repeatIntervalTimeUnit = TimeUnit.HOURS,
             flexTimeInterval = 15,
             flexTimeIntervalUnit = TimeUnit.MINUTES
         )
-            .addTag("keepalive")
+            .addTag(uniqueWorkName)
             .build()
-        //workManager.cancelAllWork()
+        val workManager = WorkManager.getInstance(this)
+        workManager.cancelUniqueWork(uniqueWorkName)
         workManager.enqueueUniquePeriodicWork(
-            "keepalive",
+            uniqueWorkName,
             ExistingPeriodicWorkPolicy.REPLACE,
             keepalive
         )
@@ -95,23 +73,6 @@ class AppSingleton : Application(), Configuration.Provider {
         const val CHANNEL_ID = "autoStartServiceChannel"
         const val CHANNEL_NAME = "Upload Service Channel"
         var STARTED = false
-    }
-
-    private fun createNotificationChannel() {
-
-        val manager: NotificationManager = getSystemService()!!
-
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
-
-        channel.enableLights(true)
-        channel.description = CHANNEL_NAME
-        channel.lightColor = Color.BLUE
-
-        manager.createNotificationChannel(channel)
     }
 }
 

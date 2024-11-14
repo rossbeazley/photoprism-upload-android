@@ -6,13 +6,13 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 
 class PhotoPrismApp(
-    val fileSystem: Filesystem = AndroidFileObserverFilesystem(),
-    private val jobSystem: CapturingBackgroundJobSystem,
-    val auditLogService: CapturingAuditLogService,
-    val uploadQueue: SyncQueue /* = SharedPrefsSyncQueue(context) */,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    val photoServer: PhotoServer,
-    val config: Config,
+    private val fileSystem: Filesystem,
+    private val jobSystem: BackgroundJobSystem,
+    private val auditLogService: AuditLogService,
+    private val uploadQueue: SyncQueue /* = SharedPrefsSyncQueue(context) */,
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val photoServer: PhotoServer,
+    private val config: Config,
 ) {
 
     private val scope = CoroutineScope(dispatcher)
@@ -24,19 +24,22 @@ class PhotoPrismApp(
             flow.collect(::observedPhoto)
         }
         auditLogService.log(ApplicationCreatedAuditLog())
+        log("App init")
     }
 
     suspend fun readyToUpload(expectedFilePath: String): JobResult {
+        log("Upload from work with cb")
         return uploadPhoto(expectedFilePath)
     }
 
     private suspend fun observedPhoto(atPath: String) {
-        jobSystem.schedule(atPath)
+        log("observedPhoto(atPath: $atPath)")
         auditLogService.log(ScheduledAuditLog(atPath))
         ScheduledFileUpload(atPath).also {
             uploadQueue.put(it)
             observer?.emit(NewEvent(it))
         }
+        jobSystem.schedule(atPath)
     }
 
     private suspend fun uploadPhoto(atFilePath: String): JobResult {
@@ -47,6 +50,7 @@ class PhotoPrismApp(
             .also { observer?.emit(NewEvent(it)) }
 
         val result: Result<Unit> = photoServer.upload(atFilePath)
+        log("Result $result")
         return jobResult(result, queueEntry)
     }
 

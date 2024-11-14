@@ -9,7 +9,7 @@ import ulk.co.rossbeazley.photoprism.upload.log
 
 fun buildHttpClientForPhotoServer(): OkHttpClient {
     val httpLoggingInterceptor = HttpLoggingInterceptor {
-        log(it)
+        log("HTTP::LOG::$it")
     }
     httpLoggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
     return OkHttpClient.Builder()
