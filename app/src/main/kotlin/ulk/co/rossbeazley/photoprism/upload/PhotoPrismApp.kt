@@ -49,6 +49,7 @@ class PhotoPrismApp(
             .also(uploadQueue::put)
             .also { observer?.emit(NewEvent(it)) }
 
+        auditLogService.log(UploadingAuditLog(atFilePath))
         val result: Result<Unit> = photoServer.upload(atFilePath)
         log("Result $result")
         return jobResult(result, queueEntry)
@@ -60,23 +61,26 @@ class PhotoPrismApp(
     ) = when {
         result.isSuccess -> {
             uploadQueue.remove(queueEntry)
+            auditLogService.log(UploadedAuditLog(queueEntry.filePath))
             observer?.emit(NewEvent(CompletedFileUpload(queueEntry.filePath)))
             JobResult.Success
         }
         result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
             uploadQueue.put(queueEntry.failed())
+            auditLogService.log(FailedAuditLog(queueEntry.filePath))
             observer?.emit(NewEvent(queueEntry.failed()))
             JobResult.Failure
         }
         else -> {
             val queueEntry1 = queueEntry.retryLater()
+            auditLogService.log(WaitingToRetryAuditLog(queueEntry.filePath))
             observer?.emit(NewEvent(queueEntry1))
             uploadQueue.put(queueEntry1)
             JobResult.Retry
         }
     }
 
-    var observer : MutableSharedFlow<NewEvent>? = null
+    private var observer : MutableSharedFlow<NewEvent>? = null
 
     fun observeSyncEvents(): Flow<NewEvent> {
         val flow = MutableSharedFlow<NewEvent>()

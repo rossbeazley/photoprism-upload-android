@@ -94,6 +94,8 @@ class UploadUseCases {
         assertThat(adapters.photoServer.path, equalTo(expectedFilePath))
 
         // and an audit log is created
+        val capturedAuditLog = adapters.auditLogService.capturedAuditLog
+        assertThat(capturedAuditLog!!, equalTo(UploadingAuditLog(expectedFilePath)))
 
         // and the queue entry is updated to started
         val expectedQueueEntry = RunningFileUpload(expectedFilePath, 1)
@@ -117,6 +119,8 @@ class UploadUseCases {
         assertThat(adapters.uploadQueue.removedQueueEntry?.filePath, equalTo(expectedFilePath))
 
         // and an audit log is created
+        val capturedAuditLog = adapters.auditLogService.capturedAuditLog
+        assertThat(capturedAuditLog, equalTo(UploadedAuditLog(expectedFilePath)))
 
         // and the job is marked as complete
         assertThat(uploadResult.await(), isA<JobResult.Success>())
@@ -136,6 +140,8 @@ class UploadUseCases {
         assertThat(adapters.uploadQueue.capturedQueueEntry, equalTo(expectedQueueEntry))
 
         // and an audit log is created
+        val capturedAuditLog = adapters.auditLogService.capturedAuditLog
+        assertThat(capturedAuditLog, equalTo(WaitingToRetryAuditLog(expectedFilePath)))
 
         // and the job is marked as retry
         assertThat(uploadResult.await(), isA<JobResult.Retry>())
@@ -153,6 +159,8 @@ class UploadUseCases {
 
         // then the queue entry is removed
         // and an audit log is created
+        val capturedAuditLog = adapters.auditLogService.capturedAuditLog
+        assertThat(capturedAuditLog, equalTo(UploadedAuditLog(expectedFilePath)))
 
         // and the job is marked as complete
         assertThat(uploadResult.await(), isA<JobResult.Success>())
@@ -168,6 +176,9 @@ class UploadUseCases {
         adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
 
         // then an audit log is created
+        val capturedAuditLog = adapters.auditLogService.capturedAuditLog
+            assertThat(capturedAuditLog, equalTo(FailedAuditLog(expectedFilePath)))
+
         // and the job is marked as failed
         assertThat(uploadResult.await(), isA<JobResult.Failure>())
 

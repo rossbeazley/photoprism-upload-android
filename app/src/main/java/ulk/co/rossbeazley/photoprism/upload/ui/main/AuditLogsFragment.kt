@@ -37,14 +37,20 @@ class AuditLogsFragment : Fragment() {
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
         i.inflate(R.layout.fragment_main, c, false)
 
-    var events = ""
-    var logs = ""
+    private var events = ""
+    private var logs = ""
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val findViewById = view.findViewById<TextView>(R.id.message) ?: return
         lifecycleScope.launch {
             auditRepository.observeLogs().collect {
-                logs = it
+                logs = it.split("\n")
+                    .reversed()
+                    .joinToString("\n") { log ->
+                        log.replace("(", "\n")
+                            .replace(")", "")
+                    }
+
                 findViewById.text = events + logs
 
             }

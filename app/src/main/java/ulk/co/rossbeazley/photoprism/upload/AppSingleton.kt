@@ -46,8 +46,6 @@ class AppSingleton : Application() {
             uploadQueue = SharedPrefsSyncQueue(context = this),
             auditLogService = auditRepository,
         )
-
-        auditRepository.log("Application onCreate")
     }
 
     private fun startKeepAlive() {
