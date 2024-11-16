@@ -69,13 +69,22 @@ Audit Logs:
 Next up:
 ✓ - rework callback for work manager to promote to explicit public primary port
 ✓ - write adapter for file watcher service
-✓ - write status event observerable flow
+✓ - write status event observable flow
 ✓ - write adapter to persist sync queue
 ✓ - implement work manager integration
- - convert capturing audit log service to AuditRepo (maybe implement adapter for now)
- - do upload service intergation tests against test service (needs deploying)
- - complete rest of audit logs including screen
- - wire everything together
- - implement keep alive task
+✓ - implement AuditRepo adapter for now
+✓ - complete rest of audit logs
+✓ - wire everything together
+✓ - implement keep alive task
+ - do upload service integration tests against test service (needs deploying)
+ - audit log screen
+ - real audit log service, sharedprefs at first, maybe with json then sqlite or summit
 
  - WORK OUT WHATS LEFT, DRAW A DIAGRAM
+
+ - "share" photo to sync
+ - notice what the last file was and discover newer photos, maybe when we detect a new photo or on button press
+ - render the sync queue
+ - retry a failed download
+ - jetpack compose
+ - configuration screen, server url, creds, retry count, backoff time, directory to watch

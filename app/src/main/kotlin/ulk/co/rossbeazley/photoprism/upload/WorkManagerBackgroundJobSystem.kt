@@ -8,6 +8,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import java.time.Duration
+import java.util.Date
+import java.util.concurrent.TimeUnit
 
 class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem,
     WorkerFactory() {
@@ -65,8 +67,38 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
     ): ListenableWorker? {
         return when(workerClassName) {
             JobSystemWorker::class.java.name ->  JobSystemWorker(cb, appContext, workerParameters)
+            KeepaliveTask::class.java.name -> KeepaliveTask(appContext, workerParameters)
             else -> null
         }
     }
 
+    class KeepaliveTask(
+        appContext: Context,
+        workerParams: WorkerParameters,
+    ) : Worker(appContext, workerParams) {
+
+        override fun doWork(): Result {
+            println("keepalive ${Date().toGMTString()}")
+            return Result.success()
+        }
+    }
+
+    fun startKeepAlive() {
+        val uniqueWorkName = "keepalive"
+        val keepalive = PeriodicWorkRequestBuilder<KeepaliveTask>(
+            repeatInterval = 1,
+            repeatIntervalTimeUnit = TimeUnit.HOURS,
+            flexTimeInterval = 15,
+            flexTimeIntervalUnit = TimeUnit.MINUTES
+        )
+            .addTag(uniqueWorkName)
+            .build()
+        val workManager = WorkManager.getInstance(context)
+        workManager.cancelUniqueWork(uniqueWorkName)
+        workManager.enqueueUniquePeriodicWork(
+            uniqueWorkName,
+            ExistingPeriodicWorkPolicy.REPLACE,
+            keepalive
+        )
+    }
 }

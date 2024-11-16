@@ -46,25 +46,8 @@ class AppSingleton : Application() {
             uploadQueue = SharedPrefsSyncQueue(context = this),
             auditLogService = auditRepository,
         )
-    }
 
-    private fun startKeepAlive() {
-        val uniqueWorkName = "keepalive"
-        val keepalive = PeriodicWorkRequestBuilder<KeepaliveTask>(
-            repeatInterval = 1,
-            repeatIntervalTimeUnit = TimeUnit.HOURS,
-            flexTimeInterval = 15,
-            flexTimeIntervalUnit = TimeUnit.MINUTES
-        )
-            .addTag(uniqueWorkName)
-            .build()
-        val workManager = WorkManager.getInstance(this)
-        workManager.cancelUniqueWork(uniqueWorkName)
-        workManager.enqueueUniquePeriodicWork(
-            uniqueWorkName,
-            ExistingPeriodicWorkPolicy.REPLACE,
-            keepalive
-        )
+        workManagerBackgroundJobSystem.startKeepAlive()
     }
 
     companion object {
