@@ -8,6 +8,13 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.RetryFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.ScheduledFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsSyncQueue
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.SyncQueue
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.UploadQueueEntry
 import kotlin.random.Random
 
 class SharedPrefsSyncQueueIntegrationTest {

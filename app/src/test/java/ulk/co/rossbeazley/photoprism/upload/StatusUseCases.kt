@@ -3,15 +3,17 @@ package ulk.co.rossbeazley.photoprism.upload
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
-import kotlin.coroutines.resume
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.RetryFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.ScheduledFileUpload
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class StatusUseCases {

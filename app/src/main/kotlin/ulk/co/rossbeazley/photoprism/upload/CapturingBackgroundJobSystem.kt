@@ -1,7 +1,7 @@
 package ulk.co.rossbeazley.photoprism.upload
 
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.BackgroundJobSystem
 import java.lang.AssertionError
-import java.util.*
 
 class CapturingBackgroundJobSystem : BackgroundJobSystem {
 

@@ -6,8 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import ulk.co.rossbeazley.photoprism.upload.AuditLog
-import ulk.co.rossbeazley.photoprism.upload.AuditLogService
 
 class AuditRepository(
     val globalScope: CoroutineScope, preferences: SharedPreferences

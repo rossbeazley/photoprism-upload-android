@@ -4,18 +4,16 @@ import android.content.Context
 import android.os.Bundle
 import android.view.*
 import androidx.fragment.app.Fragment
-import android.widget.Button
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.startup.AppInitializer
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import okhttp3.internal.wait
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
 import ulk.co.rossbeazley.photoprism.upload.NewEvent
 import ulk.co.rossbeazley.photoprism.upload.R
-import ulk.co.rossbeazley.photoprism.upload.WorkManagerInitialiser
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 
 class AuditLogsFragment : Fragment() {

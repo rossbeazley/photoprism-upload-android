@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerConfigInitialiser
 import java.util.*
 import java.util.concurrent.TimeUnit
 

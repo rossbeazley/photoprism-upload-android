@@ -1,5 +1,8 @@
 package ulk.co.rossbeazley.photoprism.upload
 
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.SyncQueue
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.UploadQueueEntry
+
 class FakeSyncQueue : SyncQueue {
     var capturedQueueEntry : UploadQueueEntry? = null
 

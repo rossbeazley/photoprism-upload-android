@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystem
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystemInitialiser
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerConfigInitialiser
 
 class BackgroundJobSystemIntegrationTest {
 
@@ -23,7 +26,8 @@ class BackgroundJobSystemIntegrationTest {
     @Before
     fun setup() {
         val appInitialiser = AppInitializer.getInstance(context)
-        backgroundJobSystem = appInitialiser.initializeComponent(WorkManagerBackgroundJobSystemInitialiser::class.java)
+        backgroundJobSystem = appInitialiser.initializeComponent(
+            WorkManagerBackgroundJobSystemInitialiser::class.java)
         val config : Configuration = appInitialiser.initializeComponent(WorkManagerConfigInitialiser::class.java)
 
         // Initialize WorkManager for instrumentation tests.

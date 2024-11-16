@@ -1,4 +1,4 @@
-package ulk.co.rossbeazley.photoprism.upload
+package ulk.co.rossbeazley.photoprism.upload.audit
 
 sealed class AuditLog
 data class ScheduledAuditLog(val filePath: String) : AuditLog()

@@ -1,22 +1,14 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import android.app.Application
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.graphics.Color
-import android.util.Log
-import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
 import androidx.startup.AppInitializer
-import androidx.work.*
 import kotlinx.coroutines.GlobalScope
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
-import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
-import ulk.co.rossbeazley.photoprism.upload.photoserver.WebdavPutTask
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystemInitialiser
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.photoserver.buildPhotoServer
-import java.io.File
-import java.util.concurrent.TimeUnit
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsSyncQueue
 
 
 class AppSingleton : Application() {

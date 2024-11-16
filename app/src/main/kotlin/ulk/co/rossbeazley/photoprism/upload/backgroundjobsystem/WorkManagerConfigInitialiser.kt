@@ -1,4 +1,4 @@
-package ulk.co.rossbeazley.photoprism.upload
+package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 
 import android.content.Context
 import androidx.startup.AppInitializer
@@ -8,7 +8,8 @@ import androidx.work.Configuration
 class WorkManagerConfigInitialiser : Initializer<Configuration> {
     override fun create(context: Context): Configuration {
         val instance = AppInitializer.getInstance(context)
-        val backgroundJobSystem = instance.initializeComponent(WorkManagerBackgroundJobSystemInitialiser::class.java)
+        val backgroundJobSystem = instance.initializeComponent(
+            WorkManagerBackgroundJobSystemInitialiser::class.java)
         val config: Configuration = Configuration.Builder()
             .setWorkerFactory(backgroundJobSystem)
             .build()

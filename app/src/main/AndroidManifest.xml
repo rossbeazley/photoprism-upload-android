@@ -54,15 +54,15 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
             <meta-data
-                android:name="ulk.co.rossbeazley.photoprism.upload.WorkManagerBackgroundJobSystemInitialiser"
+                android:name="ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystemInitialiser"
                 android:value="androidx.startup"
                 tools:node="remove" />
             <meta-data
-                android:name="ulk.co.rossbeazley.photoprism.upload.WorkManagerConfigInitialiser"
+                android:name="ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerConfigInitialiser"
                 android:value="androidx.startup"
                 tools:node="remove" />
             <meta-data
-                android:name="ulk.co.rossbeazley.photoprism.upload.WorkManagerInitialiser"
+                android:name="ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser"
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>

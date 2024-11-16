@@ -1,4 +1,4 @@
-package ulk.co.rossbeazley.photoprism.upload
+package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 
 import android.content.Context
 import androidx.startup.AppInitializer

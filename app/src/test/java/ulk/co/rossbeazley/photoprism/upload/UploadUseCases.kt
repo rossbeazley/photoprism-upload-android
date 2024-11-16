@@ -8,7 +8,17 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.audit.ApplicationCreatedAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.FailedAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.ScheduledAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.UploadedAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.UploadingAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetryAuditLog
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.RetryFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.ScheduledFileUpload
 import kotlin.coroutines.resume
 
 @OptIn(ExperimentalCoroutinesApi::class)

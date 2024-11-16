@@ -1,6 +1,6 @@
-package ulk.co.rossbeazley.photoprism.upload
+package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 
-import java.util.*
+import ulk.co.rossbeazley.photoprism.upload.JobResult
 
 interface BackgroundJobSystem {
     fun schedule(forPath: String): String

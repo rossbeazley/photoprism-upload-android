@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
 import kotlin.coroutines.resume
 
 @OptIn(ExperimentalCoroutinesApi::class)
