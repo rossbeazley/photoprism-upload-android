@@ -12,6 +12,8 @@ import ulk.co.rossbeazley.photoprism.upload.ui.main.AuditLogsFragment
 
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.STARTED
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
+import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
+import java.util.Date
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,9 +33,10 @@ class MainActivity : AppCompatActivity() {
                 .commitNow()
         }
 
-        if(
-        ContextCompat.checkSelfPermission(this,android.Manifest.permission.POST_NOTIFICATIONS)
-        == PackageManager.PERMISSION_GRANTED ) {
+        if (
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
             startService(this)
         } else {
             requestPermissionLauncher.launch(
@@ -64,7 +67,11 @@ class MainActivity : AppCompatActivity() {
                     GlobalScope,
                     PreferenceManager.getDefaultSharedPreferences(applicationContext)
                 ).log(
-                    "Last close: ${it.description} ${it.reason} ${it.timestamp}"
+                    DebugAuditLog(
+                        "Last close: ${it.description}\n" +
+                                "rss:${it.rss} pss:${it.pss}\n" +
+                                "${it.reason} ${it.timestamp}"
+                    )
                 )
             }
     }

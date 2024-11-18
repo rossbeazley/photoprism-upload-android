@@ -20,14 +20,14 @@ class AuditRepository(
     // TODO (rbeazley) TMP HACK to get logs
     override fun log(log: AuditLog) = log(log.toString())
 
-    fun log(logMsg: String) {
+    private fun log(logMsg: String) {
         sharedPreferences
             .edit(commit = true) {
                 putString(System.nanoTime().toString(), logMsg)
             }
     }
 
-    fun logs() = logLines(sharedPreferences)
+    private fun logs() = logLines(sharedPreferences)
         .joinToString(separator = "\n") { it }
         .also { println(it) }
 

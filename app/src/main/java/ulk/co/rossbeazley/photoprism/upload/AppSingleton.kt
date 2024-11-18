@@ -13,7 +13,7 @@ import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsSyncQueue
 
 class AppSingleton : Application() {
 
-    private val auditRepository : AuditRepository by lazy { AuditRepository(
+    val auditRepository : AuditRepository by lazy { AuditRepository(
         GlobalScope,
         PreferenceManager.getDefaultSharedPreferences(this)
     ) }
@@ -40,6 +40,8 @@ class AppSingleton : Application() {
         )
 
         workManagerBackgroundJobSystem.startKeepAlive()
+
+//        workmanager -> workmanager config -> workmanager factory -> photoprism app
     }
 
     companion object {

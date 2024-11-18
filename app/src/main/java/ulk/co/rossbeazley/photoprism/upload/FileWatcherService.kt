@@ -4,6 +4,7 @@ import android.app.*
 import androidx.core.app.NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE
 import androidx.core.app.NotificationCompat.PRIORITY_LOW
 import android.app.PendingIntent.FLAG_IMMUTABLE
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -15,19 +16,48 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.CHANNEL_ID
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.CHANNEL_NAME
+import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
+import java.util.Date
 
 class FileWatcherService : Service() {
     override fun onBind(p0: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
-        log("Service oncreate")
+        auditRepository().log(DebugAuditLog("Service oncreate"))
     }
 
     override fun onStart(intent: Intent?, startId: Int) {
         super.onStart(intent, startId)
-        log("Service onstart")
+        auditRepository().log(DebugAuditLog("Service onstart"))
     }
+
+    override fun onDestroy() {
+        auditRepository().log(DebugAuditLog("Service destroy"))
+        super.onDestroy()
+    }
+
+    override fun onTimeout(startId: Int) {
+        auditRepository().log(DebugAuditLog("Service timeout"))
+        super.onTimeout(startId)
+    }
+
+    override fun onTrimMemory(level: Int) {
+        val levelDesc = when (level) {
+            ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> "TRIM_MEMORY_COMPLETE"
+            ComponentCallbacks2.TRIM_MEMORY_MODERATE -> "TRIM_MEMORY_MODERATE"
+            ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN -> "TRIM_MEMORY_UI_HIDDEN"
+            ComponentCallbacks2.TRIM_MEMORY_BACKGROUND -> "TRIM_MEMORY_BACKGROUND"
+            ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> "TRIM_MEMORY_RUNNING_CRITICAL"
+            ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE -> "TRIM_MEMORY_RUNNING_MODERATE"
+            ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> "TRIM_MEMORY_RUNNING_LOW"
+            else -> level.toString()
+        }
+        auditRepository().log(DebugAuditLog("Service trim memory $levelDesc ${Date()}"))
+        super.onTrimMemory(level)
+    }
+
+    private fun auditRepository() = (application as AppSingleton).auditRepository
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         log("onstartcommand")

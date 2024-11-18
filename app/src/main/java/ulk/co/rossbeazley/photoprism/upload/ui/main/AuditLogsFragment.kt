@@ -15,6 +15,7 @@ import ulk.co.rossbeazley.photoprism.upload.NewEvent
 import ulk.co.rossbeazley.photoprism.upload.R
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
+import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
 
 class AuditLogsFragment : Fragment() {
 
@@ -70,7 +71,7 @@ class AuditLogsFragment : Fragment() {
         return when (item.itemId) {
             R.id.clearlogs -> {
                 auditRepository.clearAll()
-                auditRepository.log("Cleared logs")
+                auditRepository.log(DebugAuditLog("Cleared logs"))
                 true
             }
 
@@ -78,7 +79,7 @@ class AuditLogsFragment : Fragment() {
                 val workManager = AppInitializer.getInstance(requireContext())
                     .initializeComponent(WorkManagerInitialiser::class.java)
                 workManager.cancelAllWork()
-                auditRepository.log("Cleared work manager")
+                auditRepository.log(DebugAuditLog("Cleared work manager"))
                 true
             }
 
