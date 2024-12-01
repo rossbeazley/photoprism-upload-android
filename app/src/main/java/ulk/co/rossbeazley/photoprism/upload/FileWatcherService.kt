@@ -11,7 +11,6 @@ import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.CHANNEL_ID
@@ -25,6 +24,7 @@ class FileWatcherService : Service() {
     override fun onCreate() {
         super.onCreate()
         auditRepository().log(DebugAuditLog("Service oncreate"))
+        doOnStartCommand()
     }
 
     override fun onStart(intent: Intent?, startId: Int) {
@@ -53,14 +53,20 @@ class FileWatcherService : Service() {
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> "TRIM_MEMORY_RUNNING_LOW"
             else -> level.toString()
         }
-        auditRepository().log(DebugAuditLog("Service trim memory $levelDesc ${Date()}"))
+        auditRepository().log(DebugAuditLog("Service trim memory $levelDesc"))
         super.onTrimMemory(level)
     }
 
     private fun auditRepository() = (application as AppSingleton).auditRepository
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        log("onstartcommand")
+        auditRepository().log(DebugAuditLog("Service onstartcommand"))
+        doOnStartCommand()
+        return START_NOT_STICKY
+    }
+
+    private fun doOnStartCommand() {
+        auditRepository().log(DebugAuditLog("Service do onstartcommand"))
 
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
@@ -70,29 +76,22 @@ class FileWatcherService : Service() {
 
         createNotificationChannel()
 
-        val notification: Notification = NotificationCompat.Builder(this, AppSingleton.CHANNEL_ID)
+        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Auto Start Service")
             .setContentText("file sync")
             .setOngoing(true)
-            .setColor( (ContextCompat.getColor(this, android.R.color.holo_blue_light)))
+            .setColor((ContextCompat.getColor(this, android.R.color.holo_blue_light)))
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setPriority(PRIORITY_LOW)
             .setForegroundServiceBehavior(FOREGROUND_SERVICE_IMMEDIATE)
             .setChannelId(CHANNEL_ID)
             .build()
-
-        log("onstartcommand notificaion built")
-        //ServiceCompat.startForeground
         startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        log("onstartcommand started")
-        return START_NOT_STICKY
     }
 
     private fun createNotificationChannel() {
-
         val manager: NotificationManager = getSystemService()!!
-
         val channel = NotificationChannel(
             CHANNEL_ID,
             CHANNEL_NAME,
@@ -108,6 +107,7 @@ class FileWatcherService : Service() {
 }
 
 fun startService(context: Context) {
+    (context.applicationContext as AppSingleton).auditRepository.log(DebugAuditLog("Calling startService"))
     val serviceIntent = Intent(context, FileWatcherService::class.java)
     serviceIntent.putExtra("inputExtra", "AutoStartService")
     ContextCompat.startForegroundService(context, serviceIntent)

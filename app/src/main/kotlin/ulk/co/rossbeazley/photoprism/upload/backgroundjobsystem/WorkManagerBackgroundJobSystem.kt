@@ -6,19 +6,21 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
+import ulk.co.rossbeazley.photoprism.upload.AppSingleton
 import ulk.co.rossbeazley.photoprism.upload.JobResult
+import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
+import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
 import ulk.co.rossbeazley.photoprism.upload.log
 import java.time.Duration
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem,
-    WorkerFactory() {
+class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem {
 
     private var cb: suspend (String) -> JobResult = { JobResult.Retry }
 
     override fun schedule(forPath: String): String {
-        val request = OneTimeWorkRequestBuilder<JobSystemWorker>()
+        val request = OneTimeWorkRequestBuilder<WorkManagerBackgroundJobFactory.JobSystemWorker>()
             .setInputData(workDataOf("A" to forPath))
             .addTag(forPath)
             .setBackoffCriteria(BackoffPolicy.LINEAR, Duration.ofSeconds(30))
@@ -32,61 +34,13 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
         return forPath
     }
 
-    class JobSystemWorker(
-        private val cb: suspend (String) -> JobResult,
-        context: Context,
-        private val parameters: WorkerParameters
-    ) : Worker(context, parameters) {
-
-        override fun doWork(): Result {
-            log("DOING WORK $id")
-            val path = parameters.inputData.getString("A") ?: ""
-            log("For path $path")
-            val job: Deferred<JobResult> = GlobalScope.async {
-                val deferred = async { cb(path) }
-                deferred.await()
-            }
-            log("Getting result")
-            val r: JobResult = job.asCompletableFuture().get()
-            log("$r")
-            return when (r) {
-                JobResult.Retry -> Result.retry()
-                JobResult.Failure -> Result.failure()
-                else -> Result.success()
-            }
-        }
-    }
-
     override fun register(callback: suspend (String) -> JobResult) {
         this.cb = callback
     }
 
-    override fun createWorker(
-        appContext: Context,
-        workerClassName: String,
-        workerParameters: WorkerParameters
-    ): ListenableWorker? {
-        return when(workerClassName) {
-            JobSystemWorker::class.java.name ->  JobSystemWorker(cb, appContext, workerParameters)
-            KeepaliveTask::class.java.name -> KeepaliveTask(appContext, workerParameters)
-            else -> null
-        }
-    }
-
-    class KeepaliveTask(
-        appContext: Context,
-        workerParams: WorkerParameters,
-    ) : Worker(appContext, workerParams) {
-
-        override fun doWork(): Result {
-            println("keepalive ${Date().toGMTString()}")
-            return Result.success()
-        }
-    }
-
     fun startKeepAlive() {
         val uniqueWorkName = "keepalive"
-        val keepalive = PeriodicWorkRequestBuilder<KeepaliveTask>(
+        val keepalive = PeriodicWorkRequestBuilder<WorkManagerBackgroundJobFactory.KeepaliveTask>(
             repeatInterval = 1,
             repeatIntervalTimeUnit = TimeUnit.HOURS,
             flexTimeInterval = 15,

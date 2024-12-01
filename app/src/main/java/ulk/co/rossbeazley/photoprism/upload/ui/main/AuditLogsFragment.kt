@@ -8,7 +8,6 @@ import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.startup.AppInitializer
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
 import ulk.co.rossbeazley.photoprism.upload.NewEvent
@@ -29,7 +28,7 @@ class AuditLogsFragment : Fragment() {
         super.onAttach(context)
         val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
         // TODO inject
-        auditRepository = AuditRepository(GlobalScope, preferences)
+        auditRepository = AuditRepository(preferences)
         setHasOptionsMenu(true)
     }
 

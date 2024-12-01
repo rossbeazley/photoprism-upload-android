@@ -7,12 +7,6 @@ import kotlin.coroutines.suspendCoroutine
 
 class MockPhotoServer(var autoComplete: Boolean = false) : PhotoServer {
     var path: String = "NO UPLOAD"
-
-    override fun doUpload(path: String): Result<Unit> {
-        this.path = path
-        return Result.success(Unit)
-    }
-
     var capturedContinuation: Continuation<Result<Unit>>? = null
 
     override suspend fun upload(path: String): Result<Unit> {

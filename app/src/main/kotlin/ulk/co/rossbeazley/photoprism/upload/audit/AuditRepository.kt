@@ -2,14 +2,12 @@ package ulk.co.rossbeazley.photoprism.upload.audit
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 
 class AuditRepository(
-    val globalScope: CoroutineScope, preferences: SharedPreferences
-                      ) : AuditLogService, SharedPreferences.OnSharedPreferenceChangeListener {
+    preferences: SharedPreferences
+) : AuditLogService, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private val sharedPreferences: SharedPreferences = preferences
 
@@ -18,13 +16,11 @@ class AuditRepository(
     }
 
     // TODO (rbeazley) TMP HACK to get logs
-    override fun log(log: AuditLog) = log(log.toString())
-
-    private fun log(logMsg: String) {
+    override fun log(log: AuditLog) {
         sharedPreferences
-            .edit(commit = true) {
-                putString(System.nanoTime().toString(), logMsg)
-            }
+                .edit {
+                    putString(log.timestamp.time.toString(), log.toString())
+                }
     }
 
     private fun logs() = logLines(sharedPreferences)
@@ -34,7 +30,7 @@ class AuditRepository(
     private fun logLines(sharedPreferences: SharedPreferences) =
         sharedPreferences
             .all
-            ?.toSortedMap { a, b -> a.toLong().compareTo(b.toLong()) }
+            ?.toSortedMap { a: String, b -> a.toLong().compareTo(b.toLong()) }
             ?.map { "${it.value.toString()}\n" }
             ?: emptyList()
 
@@ -45,9 +41,7 @@ class AuditRepository(
     }
 
     override fun onSharedPreferenceChanged(p0: SharedPreferences?, p1: String?) {
-        globalScope.launch {
-            flow.emit(logs())
-        }
+        flow.tryEmit(logs())
     }
 
     fun clearAll() {

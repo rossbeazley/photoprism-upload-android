@@ -14,14 +14,6 @@ import kotlin.coroutines.resume
 @OptIn(ExperimentalCoroutinesApi::class)
 class UploadAfterRestartUseCases {
 
-    class Adapters(
-        val fileSystem: FakeFilesystem,
-        val auditLogService: CapturingAuditLogService,
-        val jobSystem: CapturingBackgroundJobSystem,
-        val uploadQueue: FakeSyncQueue,
-        val photoServer: MockPhotoServer,
-    )
-
     private lateinit var config: MutableMap<String, String>
     private lateinit var adapters: Adapters
     private lateinit var application: PhotoPrismApp
@@ -48,6 +40,7 @@ class UploadAfterRestartUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path"),
+            lastUloadRepository = FakeLastUploadRepositoy(),
         )
     }
 
@@ -73,6 +66,7 @@ class UploadAfterRestartUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path"),
+            lastUloadRepository = FakeLastUploadRepositoy(),
         )
 
         // when the system is ready to run our job

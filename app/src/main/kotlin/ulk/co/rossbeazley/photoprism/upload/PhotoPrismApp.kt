@@ -1,6 +1,7 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import ulk.co.rossbeazley.photoprism.upload.audit.ApplicationCreatedAuditLog
@@ -13,31 +14,38 @@ import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetryAuditLog
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.BackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.LastUploadRepository
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.ScheduledFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.SyncQueue
-import ulk.co.rossbeazley.photoprism.upload.syncqueue.UploadQueueEntry
 
 class PhotoPrismApp(
     private val fileSystem: Filesystem,
     private val jobSystem: BackgroundJobSystem,
     private val auditLogService: AuditLogService,
-    private val uploadQueue: SyncQueue /* = SharedPrefsSyncQueue(context) */,
+    private val uploadQueue: SyncQueue,
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val photoServer: PhotoServer,
     private val config: Config,
+    private val lastUloadRepository: LastUploadRepository,
 ) {
 
     private val scope = CoroutineScope(dispatcher)
+    private var flow : MutableSharedFlow<NewEvent> = MutableSharedFlow<NewEvent>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     init {
         jobSystem.register(::readyToUpload)
         val flow = fileSystem.watch(config.photoDirectory)
         scope.launch {
+            val list = fileSystem.list(config.photoDirectory)
+            val indexOf = list.indexOf(lastUloadRepository.recall())
+            if (indexOf>0) {
+                list.subList(0,indexOf).forEach{ observedPhoto(it) }
+            }
+
             flow.collect(::observedPhoto)
         }
         auditLogService.log(ApplicationCreatedAuditLog())
-        log("App init")
     }
 
     suspend fun readyToUpload(expectedFilePath: String): JobResult {
@@ -50,7 +58,7 @@ class PhotoPrismApp(
         auditLogService.log(ScheduledAuditLog(atPath))
         ScheduledFileUpload(atPath).also {
             uploadQueue.put(it)
-            observer?.emit(NewEvent(it))
+            flow.emit(NewEvent(it))
         }
         jobSystem.schedule(atPath)
     }
@@ -60,7 +68,7 @@ class PhotoPrismApp(
             .peek(atFilePath)
             .willAttemptUpload()
             .also(uploadQueue::put)
-            .also { observer?.emit(NewEvent(it)) }
+            .also { flow.emit(NewEvent(it)) }
 
         auditLogService.log(UploadingAuditLog(atFilePath))
         val result: Result<Unit> = photoServer.upload(atFilePath)
@@ -74,37 +82,28 @@ class PhotoPrismApp(
     ) = when {
         result.isSuccess -> {
             uploadQueue.remove(queueEntry)
+            lastUloadRepository.remember(queueEntry.filePath)
             auditLogService.log(UploadedAuditLog(queueEntry.filePath))
-            observer?.emit(NewEvent(CompletedFileUpload(queueEntry.filePath)))
+            flow.emit(NewEvent(CompletedFileUpload(queueEntry.filePath)))
             JobResult.Success
         }
         result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
             uploadQueue.put(queueEntry.failed())
             auditLogService.log(FailedAuditLog(queueEntry.filePath))
-            observer?.emit(NewEvent(queueEntry.failed()))
+            flow.emit(NewEvent(queueEntry.failed()))
             JobResult.Failure
         }
         else -> {
             val queueEntry1 = queueEntry.retryLater()
-            auditLogService.log(WaitingToRetryAuditLog(queueEntry.filePath))
-            observer?.emit(NewEvent(queueEntry1))
+            auditLogService.log(WaitingToRetryAuditLog(queueEntry.filePath, queueEntry.attemptCount, result.exceptionOrNull()))
+            flow.emit(NewEvent(queueEntry1))
             uploadQueue.put(queueEntry1)
             JobResult.Retry
         }
     }
 
-    private var observer : MutableSharedFlow<NewEvent>? = null
-
     fun observeSyncEvents(): Flow<NewEvent> {
-        val flow = MutableSharedFlow<NewEvent>()
-        val events: List<UploadQueueEntry> = uploadQueue.all()
-        events.forEach { entry: UploadQueueEntry ->
-            scope.launch {
-                flow.emit( NewEvent(entry) )
-            }
-        }
-
-        return flow.also { observer=it }
+        return flow
     }
 
 }

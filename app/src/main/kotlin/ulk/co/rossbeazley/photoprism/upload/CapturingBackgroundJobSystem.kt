@@ -6,8 +6,10 @@ import java.lang.AssertionError
 class CapturingBackgroundJobSystem : BackgroundJobSystem {
 
     var jobFilePath : String? = null
+    val jobFilePaths : MutableList<String> = mutableListOf()
     override fun schedule(forPath: String) : String {
         jobFilePath = forPath
+        jobFilePaths += forPath
         return forPath
     }
 

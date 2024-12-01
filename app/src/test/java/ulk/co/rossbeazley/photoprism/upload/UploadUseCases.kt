@@ -24,14 +24,6 @@ import kotlin.coroutines.resume
 @OptIn(ExperimentalCoroutinesApi::class)
 class UploadUseCases {
 
-    class Adapters(
-        val fileSystem: FakeFilesystem,
-        val auditLogService: CapturingAuditLogService,
-        val jobSystem: CapturingBackgroundJobSystem,
-        val uploadQueue: FakeSyncQueue,
-        val photoServer: MockPhotoServer,
-    )
-
     private lateinit var config: MutableMap<String, String>
     private lateinit var adapters: Adapters
     private lateinit var application: PhotoPrismApp
@@ -58,6 +50,7 @@ class UploadUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path"),
+            lastUloadRepository = FakeLastUploadRepositoy(),
         )
     }
 
@@ -115,6 +108,33 @@ class UploadUseCases {
         adapters.photoServer.capturedContinuation?.resume(Result.success(Unit)) // TODO enable auto complete
 
     }
+
+    @Test
+    fun photoUploadStartedThroughPrimaryPort() = runTest(testDispatcher) {
+        //given a download is scheduled
+        photoUploadScheduled()
+
+        // when the system is ready to run our job
+
+        val job = launch { application.readyToUpload(adapters.jobSystem.jobFilePath!!) }
+         // TODO add expect method to fake
+
+        // then the download is started
+        assertThat(adapters.photoServer.path, equalTo(expectedFilePath))
+
+        // and an audit log is created
+        val capturedAuditLog = adapters.auditLogService.capturedAuditLog
+        assertThat(capturedAuditLog!!, equalTo(UploadingAuditLog(expectedFilePath)))
+
+        // and the queue entry is updated to started
+        val expectedQueueEntry = RunningFileUpload(expectedFilePath, 1)
+        assertThat(adapters.uploadQueue.capturedQueueEntry, equalTo(expectedQueueEntry))
+
+        // this just lets the coroutine finish, couldnt get it to cancel
+        adapters.photoServer.capturedContinuation?.resume(Result.success(Unit)) // TODO enable auto complete
+
+    }
+
     @Test
     fun photoUploadCompletes() = runTest(testDispatcher) {
         //given a photo is being uploaded
@@ -151,7 +171,10 @@ class UploadUseCases {
 
         // and an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-        assertThat(capturedAuditLog, equalTo(WaitingToRetryAuditLog(expectedFilePath)))
+        assertThat(capturedAuditLog, equalTo(WaitingToRetryAuditLog(
+            expectedFilePath,
+            optionalThrowable = null
+        )))
 
         // and the job is marked as retry
         assertThat(uploadResult.await(), isA<JobResult.Retry>())

@@ -10,4 +10,14 @@ class FakeFilesystem : Filesystem {
         watchedPath = path
         return flow
     }
+
+    private var files : List<String> = emptyList()
+
+    fun registerFilesNewestFirst(vararg files: String) {
+        this.files = files.toList()
+    }
+
+    override fun list(path: String) : List<String> {
+        return files
+    }
 }

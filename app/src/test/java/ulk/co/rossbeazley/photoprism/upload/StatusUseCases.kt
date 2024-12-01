@@ -18,14 +18,6 @@ import ulk.co.rossbeazley.photoprism.upload.syncqueue.ScheduledFileUpload
 @OptIn(ExperimentalCoroutinesApi::class)
 class StatusUseCases {
 
-    class Adapters(
-        val fileSystem: FakeFilesystem,
-        val auditLogService: CapturingAuditLogService,
-        val jobSystem: CapturingBackgroundJobSystem,
-        val uploadQueue: FakeSyncQueue,
-        val photoServer: MockPhotoServer,
-    )
-
     private lateinit var config: MutableMap<String, String>
     private lateinit var adapters: Adapters
     private lateinit var application: PhotoPrismApp
@@ -52,6 +44,7 @@ class StatusUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path", 2),
+            lastUloadRepository = FakeLastUploadRepositoy(),
         )
     }
 

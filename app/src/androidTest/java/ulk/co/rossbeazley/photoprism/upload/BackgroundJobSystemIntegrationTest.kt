@@ -3,6 +3,7 @@ package ulk.co.rossbeazley.photoprism.upload
 import android.content.Context
 import androidx.lifecycle.asFlow
 import androidx.startup.AppInitializer
+import androidx.startup.Initializer
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.*
 import androidx.work.testing.WorkManagerTestInitHelper

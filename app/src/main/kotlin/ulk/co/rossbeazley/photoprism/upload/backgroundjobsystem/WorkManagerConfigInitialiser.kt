@@ -8,17 +8,17 @@ import androidx.work.Configuration
 class WorkManagerConfigInitialiser : Initializer<Configuration> {
     override fun create(context: Context): Configuration {
         val instance = AppInitializer.getInstance(context)
-        val backgroundJobSystem = instance.initializeComponent(
-            WorkManagerBackgroundJobSystemInitialiser::class.java)
+        val workManagerBackgroundJobFactory = instance.initializeComponent(
+            WorkManagerBackgroundJobFactoryInitialiser::class.java)
         val config: Configuration = Configuration.Builder()
-            .setWorkerFactory(backgroundJobSystem)
+            .setWorkerFactory(workManagerBackgroundJobFactory)
             .build()
         return config
     }
 
     override fun dependencies(): List<Class<out Initializer<*>>> {
         return listOf(
-            WorkManagerBackgroundJobSystemInitialiser::class.java
+            WorkManagerBackgroundJobFactoryInitialiser::class.java
         )
     }
 }

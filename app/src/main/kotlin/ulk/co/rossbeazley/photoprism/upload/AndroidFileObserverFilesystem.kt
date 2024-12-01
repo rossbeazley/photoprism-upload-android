@@ -26,6 +26,10 @@ class AndroidFileObserverFilesystem(testDispatcher: CoroutineDispatcher = Dispat
         return flowingPathObserver.emptyFlow
     }
 
+    override fun list(path: String): List<String> {
+        return emptyList()
+    }
+
     class FlowingPathObserver(
         private val scope: CoroutineScope,
         private val path: String,

@@ -13,14 +13,6 @@ import kotlin.coroutines.resume
 @OptIn(ExperimentalCoroutinesApi::class)
 class RetryUploadUseCases {
 
-    class Adapters(
-        val fileSystem: FakeFilesystem,
-        val auditLogService: CapturingAuditLogService,
-        val jobSystem: CapturingBackgroundJobSystem,
-        val uploadQueue: FakeSyncQueue,
-        val photoServer: MockPhotoServer,
-    )
-
     private lateinit var adapters: Adapters
     private lateinit var application: PhotoPrismApp
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -46,7 +38,8 @@ class RetryUploadUseCases {
             uploadQueue = adapters.uploadQueue,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
-            config = Config("any-directory-path", maxUploadAttempts)
+            config = Config("any-directory-path", maxUploadAttempts),
+            lastUloadRepository = FakeLastUploadRepositoy()
         )
 
     }

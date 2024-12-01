@@ -7,13 +7,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
-import kotlinx.coroutines.GlobalScope
 import ulk.co.rossbeazley.photoprism.upload.ui.main.AuditLogsFragment
 
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.STARTED
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
-import java.util.Date
 
 class MainActivity : AppCompatActivity() {
 
@@ -63,10 +61,7 @@ class MainActivity : AppCompatActivity() {
             )
             .firstOrNull()
             ?.let {
-                AuditRepository(
-                    GlobalScope,
-                    PreferenceManager.getDefaultSharedPreferences(applicationContext)
-                ).log(
+                (applicationContext as AppSingleton).auditRepository.log(
                     DebugAuditLog(
                         "Last close: ${it.description}\n" +
                                 "rss:${it.rss} pss:${it.pss}\n" +

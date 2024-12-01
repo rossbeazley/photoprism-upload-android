@@ -18,25 +18,6 @@ class WebDavPhotoServer(
     val httpClient: OkHttpClient
 ) : PhotoServer {
 
-    override fun doUpload(
-        path: String
-    ): Result<Unit> {
-        try {
-            val davResource = DavCollection(
-                httpClient,
-                "https://$user@$host/originals/groovy-${System.currentTimeMillis()}.png".toHttpUrl()
-            )
-            val body = File(path).asRequestBody()
-            davResource.put(body = body, ifNoneMatch = true) {
-                log("dav respone $it")
-            }
-            return Result.success(Unit)
-        } catch (e: Exception) {
-            log("dav exception $e")
-            return Result.failure(e)
-        }
-    }
-
     override suspend fun upload(path: String): Result<Unit> {
         log("Prep upload $path")
         return suspendCoroutine { continuation ->
