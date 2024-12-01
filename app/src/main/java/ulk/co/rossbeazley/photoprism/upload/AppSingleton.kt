@@ -33,7 +33,7 @@ class AppSingleton : Application() {
 
     val photoPrismApp: PhotoPrismApp by lazy {
         PhotoPrismApp(
-            fileSystem = ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem(),
+            fileSystem = AndroidFileObserverFilesystem(),
             jobSystem = workManagerBackgroundJobSystem,
             auditLogService = auditRepository,
             uploadQueue = SharedPrefsSyncQueue(context = this),
