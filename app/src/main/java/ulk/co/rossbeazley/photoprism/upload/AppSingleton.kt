@@ -10,6 +10,7 @@ import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
+import ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.buildPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsLastUploadRepository
@@ -32,7 +33,7 @@ class AppSingleton : Application() {
 
     val photoPrismApp: PhotoPrismApp by lazy {
         PhotoPrismApp(
-            fileSystem = AndroidFileObserverFilesystem(),
+            fileSystem = ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem(),
             jobSystem = workManagerBackgroundJobSystem,
             auditLogService = auditRepository,
             uploadQueue = SharedPrefsSyncQueue(context = this),

@@ -10,6 +10,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem
+import ulk.co.rossbeazley.photoprism.upload.filesystem.Filesystem
 import java.io.File
 import java.lang.Exception
 
@@ -17,7 +19,8 @@ class FilesystemIntegrationTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    private val filesystem: Filesystem = AndroidFileObserverFilesystem(testDispatcher)
+    private val filesystem: Filesystem =
+        ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem(testDispatcher)
 
     lateinit var observedDir: File
 

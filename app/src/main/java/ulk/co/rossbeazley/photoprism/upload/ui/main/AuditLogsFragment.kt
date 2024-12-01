@@ -49,15 +49,15 @@ class AuditLogsFragment : Fragment() {
                             .replace(")", "")
                     }
 
-                findViewById.text = events + logs
-
+                val combinedLines = events + logs
+                findViewById.text = combinedLines
             }
 
             (requireContext().applicationContext as AppSingleton)
-                .photoPrismApp?.observeSyncEvents()?.collect { newevent: NewEvent ->
+                .photoPrismApp.observeSyncEvents().collect { newevent: NewEvent ->
                     events += newevent
-                    findViewById.text = events + logs
-
+                    val combinedLines = events + logs
+                    findViewById.text = combinedLines
                 }
         }
     }

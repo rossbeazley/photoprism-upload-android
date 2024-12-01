@@ -3,7 +3,6 @@ package ulk.co.rossbeazley.photoprism.upload
 import android.content.Context
 import androidx.lifecycle.asFlow
 import androidx.startup.AppInitializer
-import androidx.startup.Initializer
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.*
 import androidx.work.testing.WorkManagerTestInitHelper
@@ -13,6 +12,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystemInitialiser
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerConfigInitialiser

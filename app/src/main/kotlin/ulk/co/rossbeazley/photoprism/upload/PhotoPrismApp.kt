@@ -12,6 +12,8 @@ import ulk.co.rossbeazley.photoprism.upload.audit.UploadedAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.UploadingAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetryAuditLog
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.BackgroundJobSystem
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
+import ulk.co.rossbeazley.photoprism.upload.filesystem.Filesystem
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.LastUploadRepository

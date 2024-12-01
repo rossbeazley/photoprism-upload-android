@@ -1,4 +1,4 @@
-package ulk.co.rossbeazley.photoprism.upload
+package ulk.co.rossbeazley.photoprism.upload.filesystem
 
 import android.os.FileObserver
 import kotlinx.coroutines.CoroutineDispatcher
@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import ulk.co.rossbeazley.photoprism.upload.log
 import java.io.File
 
 class AndroidFileObserverFilesystem(testDispatcher: CoroutineDispatcher = Dispatchers.IO, private val scope: CoroutineScope = CoroutineScope(

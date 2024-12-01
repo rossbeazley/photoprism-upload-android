@@ -1,4 +1,4 @@
-package ulk.co.rossbeazley.photoprism.upload
+package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 
 sealed class JobResult {
     object Success : JobResult()

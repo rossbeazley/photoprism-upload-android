@@ -7,13 +7,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
-import ulk.co.rossbeazley.photoprism.upload.JobResult
-import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
 import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
-import ulk.co.rossbeazley.photoprism.upload.log
-import java.time.Duration
 import java.util.Date
-import java.util.concurrent.TimeUnit
 
 class WorkManagerBackgroundJobFactory(
     private val callback: suspend (String) -> JobResult,
