@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import ulk.co.rossbeazley.photoprism.upload.log
 import java.io.File
+import java.util.Arrays
 
 class AndroidFileObserverFilesystem(testDispatcher: CoroutineDispatcher = Dispatchers.IO, private val scope: CoroutineScope = CoroutineScope(
     testDispatcher
@@ -28,7 +29,11 @@ class AndroidFileObserverFilesystem(testDispatcher: CoroutineDispatcher = Dispat
     }
 
     override fun list(path: String): List<String> {
-        return emptyList()
+        val listFiles = File(path).listFiles() ?: return emptyList()
+        Arrays.sort(listFiles) { o1: File, o2: File ->
+            o2.lastModified().compareTo(o1.lastModified())
+        }
+        return listFiles.map { it.path }
     }
 
     class FlowingPathObserver(

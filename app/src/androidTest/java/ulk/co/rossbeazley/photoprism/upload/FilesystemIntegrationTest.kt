@@ -1,5 +1,6 @@
 package ulk.co.rossbeazley.photoprism.upload
 
+import android.os.SystemClock
 import androidx.test.platform.app.InstrumentationRegistry
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
@@ -7,6 +8,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.hamcrest.CoreMatchers.hasItem
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -89,6 +91,27 @@ class FilesystemIntegrationTest {
 
         //then
         assertThat(asyncResult.await(), equalTo(expectedFile.path))
+    }
+
+    @Test
+    fun listsFilesInADirectory() = runTest(testDispatcher) {
+        val expectedFile = File(observedDir, "expected.jpg")
+        expectedFile.createNewFile()
+        val strings = filesystem.list(observedDir.path)
+        assertThat(strings, equalTo(listOf("${observedDir.path}/expected.jpg")))
+    }
+
+
+    @Test
+    fun listsFilesInADirectoryNewestFirst() = runTest(testDispatcher) {
+        File(observedDir, "expected1.jpg").createNewFile()
+        SystemClock.sleep(1000)
+        File(observedDir, "expected2.jpg").createNewFile()
+        SystemClock.sleep(1000)
+        File(observedDir, "expected3.jpg").createNewFile()
+
+        val strings = filesystem.list(observedDir.path)
+        assertThat(strings, equalTo(listOf("${observedDir.path}/expected3.jpg","${observedDir.path}/expected2.jpg","${observedDir.path}/expected1.jpg")))
     }
 
     @After

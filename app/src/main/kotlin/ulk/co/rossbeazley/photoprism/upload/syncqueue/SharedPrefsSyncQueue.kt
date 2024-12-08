@@ -47,7 +47,7 @@ class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQu
             "RetryFileUpload" -> RetryFileUpload(path, attempt)
             "RunningFileUpload" -> RunningFileUpload(path, attempt)
             "ScheduledFileUpload" -> ScheduledFileUpload(path)
-            else -> TODO()
+            else -> throw Exception("${queueEntryName} unknown")
         }
     }
 

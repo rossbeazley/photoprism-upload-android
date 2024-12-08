@@ -5,11 +5,17 @@
         android:id="@+id/clearlogs"
         android:icon="@drawable/ic_auditlog_delete"
         android:title="delete logs"
-        app:showAsAction="always"/>
+        app:showAsAction="ifRoom"/>
 
     <item
         android:id="@+id/clearwork"
         android:icon="@drawable/ic_workmanager_clear_24"
         android:title="clear workmanager"
-        app:showAsAction="always"/>
+        app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/addphoto"
+        android:icon="@drawable/ic_add_a_photo_24"
+        android:title="add photo"
+        app:showAsAction="ifRoom"/>
 </menu>

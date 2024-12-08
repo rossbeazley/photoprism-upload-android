@@ -27,7 +27,7 @@ class AppSingleton : Application() {
         )
     }
 
-    val photoServer : PhotoServer by lazy { buildPhotoServer() }
+    val photoServer: PhotoServer by lazy { buildPhotoServer(contentResolver) }
     private val workManagerBackgroundJobSystem: WorkManagerBackgroundJobSystem =
         WorkManagerBackgroundJobSystem(this)
 
@@ -48,15 +48,21 @@ class AppSingleton : Application() {
 
     override fun onCreate() {
 
+        installUncaughtExceptionLogger()
+
         super.onCreate()
 
         val workManager = AppInitializer.getInstance(this)
             .initializeComponent(WorkManagerInitialiser::class.java)
 
-        workManagerBackgroundJobSystem.startKeepAlive()
+        workManagerBackgroundJobSystem.startKeepAlive(workManager)
         // photoprism app -> background job system -> workmanager
         // -> workmanager config -> workmanager factory -> photoprism app
 
+        maybeStartService()
+    }
+
+    private fun maybeStartService() {
         if (
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
             == PackageManager.PERMISSION_GRANTED
@@ -72,14 +78,22 @@ class AppSingleton : Application() {
                 )
             }
         }
+    }
 
+    private fun installUncaughtExceptionLogger() {
         Thread.currentThread().setUncaughtExceptionHandler { thread, throwable ->
             val baos = ByteArrayOutputStream()
             val writer = PrintWriter(baos)
             throwable.printStackTrace(writer)
+            throwable.stackTrace[0]
             auditRepository.log(
                 DebugAuditLog(
-                    "UNCaught exception ${throwable.message} + ${baos.toString()}"
+                    """UNCaught exception ${throwable.message}
+                        | ${throwable.stackTrace[0]}
+                        |  ${throwable.stackTrace[1]}
+                        |  ${throwable.stackTrace[2]}
+                        |  ${throwable.stackTrace[3]}"""
+                        .trimMargin()
                 )
             )
         }

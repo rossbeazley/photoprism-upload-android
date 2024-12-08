@@ -25,11 +25,12 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
         return forPath
     }
 
+    // TODO (rbeazley) delete this
     override fun register(callback: suspend (String) -> JobResult) {
         this.cb = callback
     }
 
-    fun startKeepAlive() {
+    fun startKeepAlive(workManager: WorkManager) {
         val uniqueWorkName = "keepalive"
         val keepalive = PeriodicWorkRequestBuilder<WorkManagerBackgroundJobFactory.KeepaliveTask>(
             repeatInterval = 1,
@@ -39,7 +40,6 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
         )
             .addTag(uniqueWorkName)
             .build()
-        val workManager = WorkManager.getInstance(context)
         workManager.cancelUniqueWork(uniqueWorkName)
         workManager.enqueueUniquePeriodicWork(
             uniqueWorkName,

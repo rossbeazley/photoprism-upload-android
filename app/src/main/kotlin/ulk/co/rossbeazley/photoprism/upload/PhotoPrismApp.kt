@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import ulk.co.rossbeazley.photoprism.upload.audit.ApplicationCreatedAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditLogService
+import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.FailedAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.ScheduledAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.UploadedAuditLog
@@ -39,20 +40,33 @@ class PhotoPrismApp(
         jobSystem.register(::readyToUpload)
         val flow = fileSystem.watch(config.photoDirectory)
         scope.launch {
-            val list = fileSystem.list(config.photoDirectory)
-            val indexOf = list.indexOf(lastUloadRepository.recall())
-            if (indexOf>0) {
-                list.subList(0,indexOf).forEach{ observedPhoto(it) }
-            }
-
+            findFilesMissingSinceLastLaunch()
             flow.collect(::observedPhoto)
         }
         auditLogService.log(ApplicationCreatedAuditLog())
     }
 
+    private suspend fun PhotoPrismApp.findFilesMissingSinceLastLaunch() {
+        val list = fileSystem.list(config.photoDirectory)
+        val element = lastUloadRepository.recall()
+        val indexOf = list.indexOf(element)
+        if (indexOf > 0) {
+            auditLogService.log(DebugAuditLog("Found some missed files to sync"))
+            list.subList(0, indexOf).forEach {
+                observedPhoto(it)
+            }
+            auditLogService.log(DebugAuditLog("Finished some missed files to sync $indexOf"))
+
+        }
+    }
+
     suspend fun readyToUpload(expectedFilePath: String): JobResult {
         log("Upload from work with cb")
         return uploadPhoto(expectedFilePath)
+    }
+
+    suspend fun pickPhoto(withUri: String){
+        return observedPhoto(withUri)
     }
 
     private suspend fun observedPhoto(atPath: String) {

@@ -27,11 +27,6 @@ class FileWatcherService : Service() {
         doOnStartCommand()
     }
 
-    override fun onStart(intent: Intent?, startId: Int) {
-        super.onStart(intent, startId)
-        auditRepository().log(DebugAuditLog("Service onstart"))
-    }
-
     override fun onDestroy() {
         auditRepository().log(DebugAuditLog("Service destroy"))
         super.onDestroy()

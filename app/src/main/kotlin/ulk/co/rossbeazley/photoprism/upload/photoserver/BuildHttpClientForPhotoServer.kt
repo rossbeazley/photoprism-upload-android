@@ -12,16 +12,15 @@ fun buildHttpClientForPhotoServer(): OkHttpClient {
         log("HTTP::LOG::$it")
     }
     httpLoggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
+    val authenticator = BasicDigestAuthHandler(
+        domain = null,
+        username = BuildConfig.authUserName,
+        password = BuildConfig.authPassword
+    )
     return OkHttpClient.Builder()
         .followRedirects(false)
+        .addInterceptor(authenticator)
         .addInterceptor(httpLoggingInterceptor)
-        .authenticator(
-            BasicDigestAuthHandler(
-                domain = null,
-                username = BuildConfig.authUserName,
-                password = BuildConfig.authPassword
-            )
-        )
-        .protocols(listOf(Protocol.HTTP_1_1))
+        .authenticator(authenticator)
         .build()
 }
