@@ -1,5 +1,7 @@
 This will watch the camera folder and use webdav to upload images
 
+VERY NEXT: change Sync Queue to have entries expire after time not right away, will need dates
+
 Sort of a task list:
 
 ✓ - done
@@ -18,12 +20,12 @@ photo upload screen - stub:
  add thumbnail of photo to list
 
 upload task:
- actually upload something using work manager
+✓ actually upload something using work manager
  include progress notification
- add to failed queue
+✓ add to failed queue
 
 failed uploads:
- rework sync list so just failed items
+ rework sync list add filter so just failed items
  add re-sync button
 
 later:

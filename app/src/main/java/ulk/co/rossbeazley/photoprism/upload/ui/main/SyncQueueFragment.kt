@@ -20,10 +20,10 @@ import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerIniti
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
 
-class AuditLogsFragment : Fragment() {
+class SyncQueueFragment : Fragment() {
 
     companion object {
-        fun newInstance() = AuditLogsFragment()
+        fun newInstance() = SyncQueueFragment()
     }
 
     lateinit var auditRepository: AuditRepository  //TODO custom fragment factory
@@ -61,63 +61,37 @@ class AuditLogsFragment : Fragment() {
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
         i.inflate(R.layout.fragment_main, c, false)
 
-    private var events = ""
     private var logs = ""
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val findViewById = view.findViewById<TextView>(R.id.message) ?: return
         lifecycleScope.launch {
-            auditRepository.observeLogs().collect {
-                logs = it.split("\n")
-                    .reversed()
-                    .joinToString("\n") { log ->
-                        log.replace("(", "\n")
-                            .replace(")", "")
-                    }
+            val photoPrismApp =
+                (requireContext().applicationContext as AppSingleton).photoPrismApp
 
-                val combinedLines = events + logs
-                findViewById.text = combinedLines
+            photoPrismApp.observeSyncEvents().collect {
+                logs += "\n" + it.event
+                findViewById.text = logs
             }
-
-            (requireContext().applicationContext as AppSingleton)
-                .photoPrismApp.observeSyncEvents().collect { newevent: NewEvent ->
-                    events += newevent
-                    val combinedLines = events + logs
-                    findViewById.text = combinedLines
-                }
         }
     }
 
     @Deprecated("whateva")
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.auditlogs, menu)
+        inflater.inflate(R.menu.syncqueue, menu)
     }
 
     @Deprecated("whateva")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.clearlogs -> {
-                auditRepository.clearAll()
-                auditRepository.log(DebugAuditLog("Cleared logs"))
-                true
-            }
-
-            R.id.clearwork -> {
-                val workManager = AppInitializer.getInstance(requireContext())
-                    .initializeComponent(WorkManagerInitialiser::class.java)
-                workManager.cancelAllWork()
-                auditRepository.log(DebugAuditLog("Cleared work manager"))
-                true
-            }
-
             R.id.addphoto -> {
                 doAddPhoto()
                 true
             }
 
-            R.id.syncqueue -> {
+            R.id.auditlogs -> {
                 parentFragmentManager.beginTransaction()
-                    .replace(R.id.container, SyncQueueFragment.newInstance())
+                    .replace(R.id.container, AuditLogsFragment.newInstance())
                     .commitNow()
                 true
             }
@@ -128,8 +102,6 @@ class AuditLogsFragment : Fragment() {
 
     lateinit var pickMedia: ActivityResultLauncher<PickVisualMediaRequest>
 
-    private fun doAddPhoto() {
-
+    private fun doAddPhoto() =
         pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageAndVideo))
-    }
 }

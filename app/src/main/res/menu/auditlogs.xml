@@ -18,4 +18,10 @@
         android:icon="@drawable/ic_add_a_photo_24"
         android:title="add photo"
         app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/syncqueue"
+        android:icon="@drawable/ic_sync_queue_24"
+        android:title="sync queue"
+        app:showAsAction="ifRoom"/>
 </menu>

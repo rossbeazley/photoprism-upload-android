@@ -65,7 +65,7 @@ class PhotoPrismApp(
         return uploadPhoto(expectedFilePath)
     }
 
-    suspend fun pickPhoto(withUri: String){
+    suspend fun importPhoto(withUri: String){
         return observedPhoto(withUri)
     }
 
@@ -119,7 +119,11 @@ class PhotoPrismApp(
     }
 
     fun observeSyncEvents(): Flow<NewEvent> {
-        return flow
+        return flow.also {
+            uploadQueue.all().forEach { q -> flow.tryEmit(
+                NewEvent(q)
+            ) }
+        }
     }
 
 }

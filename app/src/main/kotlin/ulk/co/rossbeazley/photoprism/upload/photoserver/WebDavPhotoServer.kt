@@ -2,6 +2,7 @@ package ulk.co.rossbeazley.photoprism.upload
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import at.bitfire.dav4jvm.DavCollection
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType
@@ -41,6 +42,7 @@ class WebDavPhotoServer(
                 override fun contentType(): MediaType? {
                     return toMediaTypeOrNull
                 }
+
                 override fun writeTo(sink: BufferedSink) {
                     contentResolver.openInputStream(contentUri)?.use { stream ->
                         sink.writeAll(stream.source())
@@ -48,12 +50,12 @@ class WebDavPhotoServer(
                 }
             }
 
-            val fileExtension = when (toMediaTypeOrNull.toString()) {
-                "video/mp4" -> ".mp4"
-                else -> ".png"
-            }
-            val fileName = path.substringAfterLast("/") + fileExtension
-            uploadRequestBody(fileName,body,continuation)
+            val mimeTypeMap = MimeTypeMap.getSingleton()
+            val fileExtension =
+                mimeTypeMap.getExtensionFromMimeType(toMediaTypeOrNull.toString()) ?: "image/jpeg"
+
+            val fileName = path.substringAfterLast("/") + "." + fileExtension
+            uploadRequestBody(fileName, body, continuation)
         }
     }
 
