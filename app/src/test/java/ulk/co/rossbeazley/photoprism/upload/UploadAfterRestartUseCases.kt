@@ -7,6 +7,13 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
+import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingAuditLogService
+import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingBackgroundJobSystem
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeFilesystem
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeLastUploadRepositoy
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeSyncQueue
+import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
 import kotlin.coroutines.resume
@@ -25,13 +32,7 @@ class UploadAfterRestartUseCases {
     fun build() {
         expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
         config = mutableMapOf<String, String>("directory" to "any-directory-path")
-        adapters = Adapters(
-            fileSystem = FakeFilesystem(),
-            auditLogService = CapturingAuditLogService(),
-            jobSystem = CapturingBackgroundJobSystem(),
-            uploadQueue = FakeSyncQueue(),
-            photoServer = MockPhotoServer(),
-        )
+        adapters = Adapters()
         application = PhotoPrismApp(
             fileSystem = adapters.fileSystem,
             jobSystem = adapters.jobSystem,
@@ -40,7 +41,7 @@ class UploadAfterRestartUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path"),
-            lastUloadRepository = FakeLastUploadRepositoy(),
+            lastUloadRepository = adapters.lastUloadRepository,
         )
     }
 

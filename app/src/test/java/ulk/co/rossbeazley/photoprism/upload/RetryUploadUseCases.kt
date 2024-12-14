@@ -2,12 +2,17 @@ package ulk.co.rossbeazley.photoprism.upload
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.isA
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
+import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeLastUploadRepositoy
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import kotlin.coroutines.resume
 
@@ -24,14 +29,8 @@ class RetryUploadUseCases {
 
     @Before
     fun build() {
-        expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
-        adapters = Adapters(
-            fileSystem = FakeFilesystem(),
-            auditLogService = CapturingAuditLogService(),
-            jobSystem = CapturingBackgroundJobSystem(),
-            uploadQueue = FakeSyncQueue(),
-            photoServer = MockPhotoServer(),
-        )
+        expectedFilePath = "any-file-path-at-all-${System.currentTimeMillis()}"
+        adapters = Adapters()
         application = PhotoPrismApp(
             fileSystem = adapters.fileSystem,
             jobSystem = adapters.jobSystem,
@@ -40,7 +39,7 @@ class RetryUploadUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path", maxUploadAttempts),
-            lastUloadRepository = FakeLastUploadRepositoy()
+            lastUloadRepository = adapters.lastUloadRepository
         )
 
     }

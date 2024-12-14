@@ -1,4 +1,4 @@
-package ulk.co.rossbeazley.photoprism.upload
+package ulk.co.rossbeazley.photoprism.upload.fakes
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow

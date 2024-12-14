@@ -1,4 +1,4 @@
-package ulk.co.rossbeazley.photoprism.upload
+package ulk.co.rossbeazley.photoprism.upload.fakes
 
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.BackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult

@@ -34,7 +34,7 @@ class PhotoPrismApp(
 ) {
 
     private val scope = CoroutineScope(dispatcher)
-    private var flow : MutableSharedFlow<NewEvent> = MutableSharedFlow<NewEvent>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private var flow : MutableSharedFlow<NewEvent> = MutableSharedFlow<NewEvent>(replay = 5, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     init {
         jobSystem.register(::readyToUpload)

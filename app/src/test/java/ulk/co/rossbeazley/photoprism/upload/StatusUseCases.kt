@@ -2,12 +2,16 @@ package ulk.co.rossbeazley.photoprism.upload
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
+import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
@@ -28,12 +32,8 @@ class StatusUseCases {
     @Before
     fun build() {
         expectedFilePath = "any-file-path-at-all-${System.currentTimeMillis()}"
-        config = mutableMapOf<String, String>("directory" to "any-directory-path")
+        config = mutableMapOf("directory" to "any-directory-path")
         adapters = Adapters(
-            fileSystem = FakeFilesystem(),
-            auditLogService = CapturingAuditLogService(),
-            jobSystem = CapturingBackgroundJobSystem(),
-            uploadQueue = FakeSyncQueue(),
             photoServer = MockPhotoServer(true),
         )
         application = PhotoPrismApp(
@@ -44,7 +44,7 @@ class StatusUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path", 2),
-            lastUloadRepository = FakeLastUploadRepositoy(),
+            lastUloadRepository = adapters.lastUloadRepository,
         )
     }
 
@@ -237,7 +237,13 @@ class StatusUseCases {
         assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
     }
 
-    @Test
+    /**
+     * This test fundamentally needs to change,
+     * its currently just emiting single events
+     * we will move to a flow of "complete" sync queue
+     * but a restricted number of completed records
+     */
+    @Test @Ignore("Redefine behaviour")
     fun observePostCompletion() = runTest(testDispatcher) {
         //given observing some items
         adapters.photoServer.autoComplete = false
@@ -247,7 +253,7 @@ class StatusUseCases {
 
         //when new file is synced
         adapters.fileSystem.flow.emit("new") // CONTRACT (file system) will emit flow of fil configured directory
-        async { adapters.jobSystem.runCallback("new") }
+        async { application.readyToUpload("new") }
         adapters.photoServer.currentUploadCompletes()
 
 

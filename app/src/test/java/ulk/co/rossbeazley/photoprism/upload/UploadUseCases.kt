@@ -15,6 +15,13 @@ import ulk.co.rossbeazley.photoprism.upload.audit.UploadedAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.UploadingAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetryAuditLog
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
+import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
+import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingAuditLogService
+import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingBackgroundJobSystem
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeFilesystem
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeLastUploadRepositoy
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeSyncQueue
+import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RetryFileUpload
@@ -36,13 +43,7 @@ class UploadUseCases {
     fun build() {
         expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
         config = mutableMapOf<String, String>("directory" to "any-directory-path")
-        adapters = Adapters(
-            fileSystem = FakeFilesystem(),
-            auditLogService = CapturingAuditLogService(),
-            jobSystem = CapturingBackgroundJobSystem(),
-            uploadQueue = FakeSyncQueue(),
-            photoServer = MockPhotoServer(),
-        )
+        adapters = Adapters()
         application = PhotoPrismApp(
             fileSystem = adapters.fileSystem,
             jobSystem = adapters.jobSystem,
@@ -51,7 +52,7 @@ class UploadUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path"),
-            lastUloadRepository = FakeLastUploadRepositoy(),
+            lastUloadRepository = adapters.lastUloadRepository,
         )
     }
 
@@ -164,7 +165,8 @@ class UploadUseCases {
         val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
 
         // when the upload fails
-        adapters.photoServer.capturedContinuation?.resume(Result.failure(Exception()))
+        val photoServerException = Exception()
+        adapters.photoServer.capturedContinuation?.resume(Result.failure(photoServerException))
 
         // then the queue entry is set to retry
         val expectedQueueEntry = RetryFileUpload(expectedFilePath, 1)
@@ -174,7 +176,8 @@ class UploadUseCases {
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
         assertThat(capturedAuditLog, equalTo(WaitingToRetryAuditLog(
             expectedFilePath,
-            optionalThrowable = null
+            attempt = 1,
+            optionalThrowable = photoServerException
         )))
 
         // and the job is marked as retry

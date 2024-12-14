@@ -7,6 +7,13 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
+import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingAuditLogService
+import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingBackgroundJobSystem
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeFilesystem
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeLastUploadRepositoy
+import ulk.co.rossbeazley.photoprism.upload.fakes.FakeSyncQueue
+import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import kotlin.coroutines.resume
 
@@ -24,14 +31,7 @@ class SyncMissedFilesUseCases {
     fun build() {
         expectedFilePath="any-file-path-at-all-${System.currentTimeMillis()}"
         config = mutableMapOf<String, String>("directory" to "any-directory-path")
-        adapters = Adapters(
-            fileSystem = FakeFilesystem(),
-            auditLogService = CapturingAuditLogService(),
-            jobSystem = CapturingBackgroundJobSystem(),
-            uploadQueue = FakeSyncQueue(),
-            photoServer = MockPhotoServer(),
-            lastUloadRepository = FakeLastUploadRepositoy(),
-        )
+        adapters = Adapters()
         application = PhotoPrismApp(
             fileSystem = adapters.fileSystem,
             jobSystem = adapters.jobSystem,
