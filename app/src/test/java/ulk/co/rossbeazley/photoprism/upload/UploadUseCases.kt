@@ -3,8 +3,10 @@ package ulk.co.rossbeazley.photoprism.upload
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.isA
-import kotlinx.coroutines.*
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -16,12 +18,6 @@ import ulk.co.rossbeazley.photoprism.upload.audit.UploadingAuditLog
 import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetryAuditLog
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
-import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingAuditLogService
-import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingBackgroundJobSystem
-import ulk.co.rossbeazley.photoprism.upload.fakes.FakeFilesystem
-import ulk.co.rossbeazley.photoprism.upload.fakes.FakeLastUploadRepositoy
-import ulk.co.rossbeazley.photoprism.upload.fakes.FakeSyncQueue
-import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RetryFileUpload
@@ -35,7 +31,6 @@ class UploadUseCases {
     private lateinit var config: MutableMap<String, String>
     private lateinit var adapters: Adapters
     private lateinit var application: PhotoPrismApp
-    private val testDispatcher = UnconfinedTestDispatcher()
 
     var expectedFilePath = ""
 
@@ -49,7 +44,7 @@ class UploadUseCases {
             jobSystem = adapters.jobSystem,
             auditLogService = adapters.auditLogService,
             uploadQueue = adapters.uploadQueue,
-            dispatcher = testDispatcher,
+            dispatcher = adapters.testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = Config("any-directory-path"),
             lastUloadRepository = adapters.lastUloadRepository,
@@ -70,7 +65,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun photoUploadScheduled() = runTest(testDispatcher) {
+    fun photoUploadScheduled() = runTest(adapters.testDispatcher) {
         // when a photo is found
         adapters.fileSystem.flow.emit(expectedFilePath) // CONTRACT (file system) will emit flow of fil configured directory
 
@@ -88,7 +83,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun photoUploadStarted() = runTest(testDispatcher) {
+    fun photoUploadStarted() = runTest(adapters.testDispatcher) {
         //given a download is scheduled
         photoUploadScheduled()
 
@@ -112,7 +107,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun photoUploadStartedThroughPrimaryPort() = runTest(testDispatcher) {
+    fun photoUploadStartedThroughPrimaryPort() = runTest(adapters.testDispatcher) {
         //given a download is scheduled
         photoUploadScheduled()
 
@@ -138,7 +133,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun photoUploadCompletes() = runTest(testDispatcher) {
+    fun photoUploadCompletes() = runTest(adapters.testDispatcher) {
         //given a photo is being uploaded
         adapters.fileSystem.flow.emit(expectedFilePath)
         val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
@@ -159,7 +154,7 @@ class UploadUseCases {
     }
 
     @Test // the one where the job is requested to retry
-    fun photoUploadIsRetried() = runTest(testDispatcher) {
+    fun photoUploadIsRetried() = runTest(adapters.testDispatcher) {
         //given a photo is being uploaded
         adapters.fileSystem.flow.emit(expectedFilePath)
         val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
@@ -185,7 +180,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun photoUploadSucceedsOnRetry() = runTest(testDispatcher) {
+    fun photoUploadSucceedsOnRetry() = runTest(adapters.testDispatcher) {
         //given a photo is being retried
         photoUploadIsRetried()
         val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
@@ -204,7 +199,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun photoUploadFails() = runTest(testDispatcher) {
+    fun photoUploadFails() = runTest(adapters.testDispatcher) {
         //given a photo is being retried
         photoUploadIsRetried()
         val uploadResult: Deferred<JobResult> = async { adapters.jobSystem.runCallback() }
@@ -225,7 +220,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun uploadTwoFiles() = runTest(testDispatcher) {
+    fun uploadTwoFiles() = runTest(adapters.testDispatcher) {
 
         expectedFilePath = "one"
         //assert that upload 1 success
@@ -237,7 +232,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun uploadTwoSlowFilesFirstRetries() = runTest(testDispatcher) {
+    fun uploadTwoSlowFilesFirstRetries() = runTest(adapters.testDispatcher) {
         expectedFilePath = "one"
         photoUploadScheduled()
 
@@ -258,7 +253,7 @@ class UploadUseCases {
     }
 
     @Test
-    fun uploadTwoSlowFilesBothRetries() = runTest(testDispatcher) {
+    fun uploadTwoSlowFilesBothRetries() = runTest(adapters.testDispatcher) {
         expectedFilePath = "one"
         photoUploadScheduled()
 
