@@ -11,14 +11,14 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.*
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
-import androidx.startup.AppInitializer
 import kotlinx.coroutines.launch
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
+import ulk.co.rossbeazley.photoprism.upload.FullState
 import ulk.co.rossbeazley.photoprism.upload.NewEvent
 import ulk.co.rossbeazley.photoprism.upload.R
-import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.UploadQueueEntry
 
 class SyncQueueFragment : Fragment() {
 
@@ -62,6 +62,7 @@ class SyncQueueFragment : Fragment() {
         i.inflate(R.layout.fragment_main, c, false)
 
     private var logs = ""
+    private val syncs = mutableMapOf<String, UploadQueueEntry>()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val findViewById = view.findViewById<TextView>(R.id.message) ?: return
@@ -69,8 +70,15 @@ class SyncQueueFragment : Fragment() {
             val photoPrismApp =
                 (requireContext().applicationContext as AppSingleton).photoPrismApp
 
-            photoPrismApp.observeSyncEvents().collect {
-                logs += "\n" + it.event
+            photoPrismApp.observeSyncEvents().collect { event ->
+                when(event) {
+                    is NewEvent -> syncs[event.event.filePath] = event.event
+                    is FullState -> {
+                        syncs.clear()
+                        syncs.putAll(event.events.associateBy { it.filePath })
+                    }
+                }
+                logs = syncs.values.joinToString(separator = "\n\n") { v -> v.toString() }
                 findViewById.text = logs
             }
         }
@@ -83,21 +91,15 @@ class SyncQueueFragment : Fragment() {
 
     @Deprecated("whateva")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.addphoto -> {
-                doAddPhoto()
-                true
-            }
-
-            R.id.auditlogs -> {
-                parentFragmentManager.beginTransaction()
-                    .replace(R.id.container, AuditLogsFragment.newInstance())
-                    .commitNow()
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
+        when (item.itemId) {
+            R.id.addphoto -> doAddPhoto()
+            R.id.clearlogs -> (requireContext().applicationContext as AppSingleton).photoPrismApp.clearSyncQueue()
+            R.id.auditlogs -> parentFragmentManager.beginTransaction()
+                .replace(R.id.container, AuditLogsFragment.newInstance())
+                .commitNow()
+            else -> return super.onOptionsItemSelected(item)
         }
+        return true
     }
 
     lateinit var pickMedia: ActivityResultLauncher<PickVisualMediaRequest>

@@ -34,7 +34,8 @@ class PhotoPrismApp(
 ) {
 
     private val scope = CoroutineScope(dispatcher)
-    private var flow : MutableSharedFlow<NewEvent> = MutableSharedFlow<NewEvent>(replay = 5, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private var flow: MutableSharedFlow<Event> =
+        MutableSharedFlow(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     init {
         jobSystem.register(::readyToUpload)
@@ -65,7 +66,7 @@ class PhotoPrismApp(
         return uploadPhoto(expectedFilePath)
     }
 
-    suspend fun importPhoto(withUri: String){
+    suspend fun importPhoto(withUri: String) {
         return observedPhoto(withUri)
     }
 
@@ -97,33 +98,53 @@ class PhotoPrismApp(
         queueEntry: RunningFileUpload
     ) = when {
         result.isSuccess -> {
-            uploadQueue.remove(queueEntry)
+            val completedFileUpload = queueEntry.complete()
+            uploadQueue.put(completedFileUpload)
             lastUloadRepository.remember(queueEntry.filePath)
             auditLogService.log(UploadedAuditLog(queueEntry.filePath))
-            flow.emit(NewEvent(CompletedFileUpload(queueEntry.filePath)))
+            flow.emit(NewEvent(completedFileUpload))
             JobResult.Success
         }
+
         result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
             uploadQueue.put(queueEntry.failed())
             auditLogService.log(FailedAuditLog(queueEntry.filePath))
             flow.emit(NewEvent(queueEntry.failed()))
             JobResult.Failure
         }
+
         else -> {
             val queueEntry1 = queueEntry.retryLater()
-            auditLogService.log(WaitingToRetryAuditLog(queueEntry.filePath, queueEntry.attemptCount, result.exceptionOrNull()))
+            auditLogService.log(
+                WaitingToRetryAuditLog(
+                    queueEntry.filePath,
+                    queueEntry.attemptCount,
+                    result.exceptionOrNull()
+                )
+            )
             flow.emit(NewEvent(queueEntry1))
             uploadQueue.put(queueEntry1)
             JobResult.Retry
         }
     }
 
-    fun observeSyncEvents(): Flow<NewEvent> {
+    fun observeSyncEvents(): Flow<Event> {
         return flow.also {
-            uploadQueue.all().forEach { q -> flow.tryEmit(
-                NewEvent(q)
-            ) }
+            flow.tryEmit(
+                FullState(
+                    uploadQueue.all()
+                )
+            )
         }
+    }
+
+    fun clearSyncQueue() {
+        uploadQueue.removeAll()
+        flow.tryEmit(
+            FullState(
+                uploadQueue.all()
+            )
+        )
     }
 
 }

@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RetryFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
@@ -149,6 +150,50 @@ class SharedPrefsSyncQueueIntegrationTest {
         queue.removeAll()
 
         assertThat(queue.all().size, equalTo(0))
+    }
+
+    @Test
+    fun willStoreFiveCompletedDownloads() {
+        queue.put(CompletedFileUpload("1"))
+        queue.put(CompletedFileUpload("2"))
+        queue.put(CompletedFileUpload("3"))
+        queue.put(CompletedFileUpload("4"))
+        queue.put(CompletedFileUpload("5"))
+        assertThat(
+            queue.all(),
+            List<UploadQueueEntry>::equals,
+            listOf(
+                CompletedFileUpload("1"),
+                CompletedFileUpload("2"),
+                CompletedFileUpload("3"),
+                CompletedFileUpload("4"),
+                CompletedFileUpload("5"),
+            )
+        )
+
+    }
+
+
+    @Test
+    fun oldestCompletedDownloadsRecordWillBeRemovedAfterFive() {
+        queue.put(CompletedFileUpload("1"))
+        queue.put(CompletedFileUpload("2"))
+        queue.put(CompletedFileUpload("3"))
+        queue.put(CompletedFileUpload("4"))
+        queue.put(CompletedFileUpload("5"))
+        queue.put(CompletedFileUpload("6"))
+        assertThat(
+            queue.all(),
+            List<UploadQueueEntry>::equals,
+            listOf(
+                CompletedFileUpload("2"),
+                CompletedFileUpload("3"),
+                CompletedFileUpload("4"),
+                CompletedFileUpload("5"),
+                CompletedFileUpload("6"),
+            )
+        )
+
     }
 
     @After

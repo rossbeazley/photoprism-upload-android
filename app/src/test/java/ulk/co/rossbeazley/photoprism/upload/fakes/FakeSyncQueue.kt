@@ -4,6 +4,7 @@ import ulk.co.rossbeazley.photoprism.upload.syncqueue.SyncQueue
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.UploadQueueEntry
 
 class FakeSyncQueue : SyncQueue {
+    var allRemoved: Boolean = false
     var capturedQueueEntry : UploadQueueEntry? = null
 
     override fun put(queueEntry : UploadQueueEntry) {
@@ -28,6 +29,6 @@ class FakeSyncQueue : SyncQueue {
     }
 
     override fun removeAll() {
-        TODO("Not yet implemented")
+        allRemoved = true
     }
 }

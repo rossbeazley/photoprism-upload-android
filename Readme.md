@@ -1,6 +1,7 @@
 This will watch the camera folder and use webdav to upload images
 
-VERY NEXT: change Sync Queue to have entries expire after time not right away, will need dates
+VERY NEXT: Compose version of sync queue then add restart
+
 
 Sort of a task list:
 

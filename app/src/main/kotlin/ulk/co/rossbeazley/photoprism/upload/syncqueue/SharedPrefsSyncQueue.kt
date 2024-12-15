@@ -1,6 +1,7 @@
 package ulk.co.rossbeazley.photoprism.upload.syncqueue
 
 import android.content.Context
+import androidx.core.content.edit
 
 class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQueue {
 
@@ -17,13 +18,18 @@ class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQu
         )
 
     override fun put(queueEntry: UploadQueueEntry) {
-        sharedPrefs.edit()
-            .putString(queueEntry.filePath, typeNameFrom(queueEntry))
-            .commit()
+        sharedPrefs.edit {
+            putString(queueEntry.filePath, typeNameFrom(queueEntry))
+        }
 
-        sharedPrefs2.edit()
-            .putInt(queueEntry.filePath, queueEntry.attemptCount)
-            .commit()
+        sharedPrefs2.edit {
+            putInt(queueEntry.filePath, queueEntry.attemptCount)
+        }
+
+        // count the completed items, remove oldest if more than 5
+        all().filterIsInstance<CompletedFileUpload>()
+            .dropLast(5)
+            .forEach(::remove)
     }
 
     private fun typeNameFrom(queueEntry: UploadQueueEntry): String {
@@ -52,9 +58,9 @@ class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQu
     }
 
     override fun remove(queueEntry: UploadQueueEntry) {
-        sharedPrefs.edit()
-            .remove(queueEntry.filePath)
-            .commit()
+        sharedPrefs.edit {
+            remove(queueEntry.filePath)
+        }
     }
 
     override fun peek(id: String): UploadQueueEntry {
@@ -75,7 +81,7 @@ class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQu
     }
 
     override fun removeAll() {
-        sharedPrefs.edit().clear().commit()
-
+        sharedPrefs.edit().clear().apply()
+        sharedPrefs2.edit().clear().apply()
     }
 }

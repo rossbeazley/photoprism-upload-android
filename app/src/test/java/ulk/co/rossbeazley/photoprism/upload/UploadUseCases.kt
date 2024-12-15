@@ -19,13 +19,13 @@ import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetryAuditLog
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RetryFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.ScheduledFileUpload
 import kotlin.coroutines.resume
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class UploadUseCases {
 
     private lateinit var config: MutableMap<String, String>
@@ -143,7 +143,8 @@ class UploadUseCases {
         adapters.photoServer.capturedContinuation?.resume(Result.success(Unit))
 
         // then the queue entry is removed
-        assertThat(adapters.uploadQueue.removedQueueEntry?.filePath, equalTo(expectedFilePath))
+        val expectedEntry = CompletedFileUpload(expectedFilePath)
+        assertThat(adapters.uploadQueue.capturedQueueEntry, equalTo(expectedEntry))
 
         // and an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog

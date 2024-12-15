@@ -3,15 +3,19 @@ package ulk.co.rossbeazley.photoprism.upload
 import android.app.ActivityManager
 import android.content.pm.PackageManager
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.preference.PreferenceManager
 import ulk.co.rossbeazley.photoprism.upload.ui.main.AuditLogsFragment
 
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.STARTED
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
+import ulk.co.rossbeazley.photoprism.upload.ui.main.SyncQueueComposeFragment
+import ulk.co.rossbeazley.photoprism.upload.ui.main.SyncQueueFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, AuditLogsFragment.newInstance())
+                .replace(R.id.container, SyncQueueFragment.newInstance())
                 .commitNow()
         }
 

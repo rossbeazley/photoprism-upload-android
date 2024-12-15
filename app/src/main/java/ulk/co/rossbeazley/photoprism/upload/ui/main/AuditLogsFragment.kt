@@ -61,7 +61,6 @@ class AuditLogsFragment : Fragment() {
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
         i.inflate(R.layout.fragment_main, c, false)
 
-    private var events = ""
     private var logs = ""
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -75,16 +74,8 @@ class AuditLogsFragment : Fragment() {
                             .replace(")", "")
                     }
 
-                val combinedLines = events + logs
-                findViewById.text = combinedLines
+                findViewById.text = logs
             }
-
-            (requireContext().applicationContext as AppSingleton)
-                .photoPrismApp.observeSyncEvents().collect { newevent: NewEvent ->
-                    events += newevent
-                    val combinedLines = events + logs
-                    findViewById.text = combinedLines
-                }
         }
     }
 
@@ -117,7 +108,7 @@ class AuditLogsFragment : Fragment() {
 
             R.id.syncqueue -> {
                 parentFragmentManager.beginTransaction()
-                    .replace(R.id.container, SyncQueueFragment.newInstance())
+                    .replace(R.id.container, SyncQueueComposeFragment.newInstance())
                     .commitNow()
                 true
             }

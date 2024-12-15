@@ -25,6 +25,10 @@ data class RunningFileUpload(override val filePath: String, override val attempt
     fun failed(): UploadQueueEntry {
         return FailedFileUpload(filePath)
     }
+
+    fun complete(): UploadQueueEntry {
+        return CompletedFileUpload(filePath)
+    }
 }
 
 data class RetryFileUpload(override val filePath: String, override val attemptCount:Int = 0) :
