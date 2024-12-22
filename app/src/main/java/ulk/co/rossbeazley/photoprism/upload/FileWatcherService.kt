@@ -15,25 +15,24 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.CHANNEL_ID
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.CHANNEL_NAME
-import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
-import java.util.Date
+import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 
 class FileWatcherService : Service() {
     override fun onBind(p0: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
-        auditRepository().log(DebugAuditLog("Service oncreate"))
+        auditRepository().log(Debug("Service oncreate"))
         doOnStartCommand()
     }
 
     override fun onDestroy() {
-        auditRepository().log(DebugAuditLog("Service destroy"))
+        auditRepository().log(Debug("Service destroy"))
         super.onDestroy()
     }
 
     override fun onTimeout(startId: Int) {
-        auditRepository().log(DebugAuditLog("Service timeout"))
+        auditRepository().log(Debug("Service timeout"))
         super.onTimeout(startId)
     }
 
@@ -48,20 +47,20 @@ class FileWatcherService : Service() {
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> "TRIM_MEMORY_RUNNING_LOW"
             else -> level.toString()
         }
-        auditRepository().log(DebugAuditLog("Service trim memory $levelDesc"))
+        auditRepository().log(Debug("Service trim memory $levelDesc"))
         super.onTrimMemory(level)
     }
 
     private fun auditRepository() = (application as AppSingleton).auditRepository
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        auditRepository().log(DebugAuditLog("Service onstartcommand"))
+        auditRepository().log(Debug("Service onstartcommand"))
         doOnStartCommand()
         return START_NOT_STICKY
     }
 
     private fun doOnStartCommand() {
-        auditRepository().log(DebugAuditLog("Service do onstartcommand"))
+        auditRepository().log(Debug("Service do onstartcommand"))
 
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
@@ -102,7 +101,7 @@ class FileWatcherService : Service() {
 }
 
 fun startService(context: Context) {
-    (context.applicationContext as AppSingleton).auditRepository.log(DebugAuditLog("Calling startService"))
+    (context.applicationContext as AppSingleton).auditRepository.log(Debug("Calling startService"))
     val serviceIntent = Intent(context, FileWatcherService::class.java)
     serviceIntent.putExtra("inputExtra", "AutoStartService")
     ContextCompat.startForegroundService(context, serviceIntent)

@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
 import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
@@ -63,16 +62,16 @@ class StatusUseCases {
 
         //when we observe
         val job = async {
-            val observedEvents = mutableListOf<FullState>()
+            val observedEvents = mutableListOf<FullSyncState>()
             application.observeSyncEvents()
-                .filterIsInstance(FullState::class)
+                .filterIsInstance(FullSyncState::class)
                 .take(1)
                 .collect(observedEvents::add)
             observedEvents
         }
 
         //then we see them
-        val expectedOobservedSyncEvents = FullState(listOf(
+        val expectedOobservedSyncEvents = FullSyncState(listOf(
             ScheduledFileUpload("one"),
             ScheduledFileUpload("two"),
             RunningFileUpload("three"),
@@ -90,9 +89,9 @@ class StatusUseCases {
             put(ScheduledFileUpload("one"))
         }
         val job = async {
-            val observedEvents = mutableListOf<NewEvent>()
+            val observedEvents = mutableListOf<PartialSyncState>()
             application.observeSyncEvents()
-                .filterIsInstance(NewEvent::class)
+                .filterIsInstance(PartialSyncState::class)
                 .take(1)
                 .collect(observedEvents::add)
             observedEvents
@@ -104,7 +103,7 @@ class StatusUseCases {
 
         //then we see the new one (or is it a list or something)
         val expectedOobservedSyncEvents = listOf(
-            NewEvent(ScheduledFileUpload("new")),
+            PartialSyncState(ScheduledFileUpload("new")),
         )
 
         assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
@@ -117,9 +116,9 @@ class StatusUseCases {
             put(ScheduledFileUpload("one"))
         }
         val job = async {
-            val observedEvents = mutableListOf<NewEvent>()
+            val observedEvents = mutableListOf<PartialSyncState>()
             application.observeSyncEvents()
-                .filterIsInstance(NewEvent::class)
+                .filterIsInstance(PartialSyncState::class)
                 .take(2)
                 .collect(observedEvents::add)
             observedEvents
@@ -131,8 +130,8 @@ class StatusUseCases {
 
         //then we see the new one (or is it a list or something)
         val expectedObservedSyncEvents = listOf(
-            NewEvent(ScheduledFileUpload("new")),
-            NewEvent(RunningFileUpload("new", 1)),
+            PartialSyncState(ScheduledFileUpload("new")),
+            PartialSyncState(RunningFileUpload("new", 1)),
         )
 
         assertThat(job.await(), equalTo(expectedObservedSyncEvents))
@@ -147,9 +146,9 @@ class StatusUseCases {
             put(ScheduledFileUpload("one"))
         }
         val job = async {
-            val observedEvents = mutableListOf<NewEvent>()
+            val observedEvents = mutableListOf<PartialSyncState>()
             application.observeSyncEvents()
-                .filterIsInstance(NewEvent::class)
+                .filterIsInstance(PartialSyncState::class)
                 .take(3)
                 .collect(observedEvents::add)
             observedEvents
@@ -162,9 +161,9 @@ class StatusUseCases {
 
         //then we see the new one (or is it a list or something)
         val expectedOobservedSyncEvents = listOf(
-            NewEvent(ScheduledFileUpload("new")),
-            NewEvent(RunningFileUpload("new", 1)),
-            NewEvent(RetryFileUpload("new", 1)),
+            PartialSyncState(ScheduledFileUpload("new")),
+            PartialSyncState(RunningFileUpload("new", 1)),
+            PartialSyncState(RetryFileUpload("new", 1)),
         )
 
         assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
@@ -178,9 +177,9 @@ class StatusUseCases {
             put(ScheduledFileUpload("one"))
         }
         val job = async {
-            val observedEvents = mutableListOf<NewEvent>()
+            val observedEvents = mutableListOf<PartialSyncState>()
             application.observeSyncEvents()
-                .filterIsInstance(NewEvent::class)
+                .filterIsInstance(PartialSyncState::class)
                 .take(5)
                 .collect(observedEvents::add)
             observedEvents
@@ -196,11 +195,11 @@ class StatusUseCases {
 
         //then we see the new one (or is it a list or something)
         val expectedOobservedSyncEvents = listOf(
-            NewEvent(ScheduledFileUpload("new")),
-            NewEvent(RunningFileUpload("new", 1)),
-            NewEvent(RetryFileUpload("new", 1)),
-            NewEvent(RunningFileUpload("new", 2)),
-            NewEvent(FailedFileUpload("new")),
+            PartialSyncState(ScheduledFileUpload("new")),
+            PartialSyncState(RunningFileUpload("new", 1)),
+            PartialSyncState(RetryFileUpload("new", 1)),
+            PartialSyncState(RunningFileUpload("new", 2)),
+            PartialSyncState(FailedFileUpload("new")),
         )
 
         assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
@@ -216,9 +215,9 @@ class StatusUseCases {
             put(ScheduledFileUpload("one"))
         }
         val job = async {
-            val observedEvents = mutableListOf<NewEvent>()
+            val observedEvents = mutableListOf<PartialSyncState>()
             application.observeSyncEvents()
-                .filterIsInstance(NewEvent::class)
+                .filterIsInstance(PartialSyncState::class)
                 .take(3)
                 .collect(observedEvents::add)
             observedEvents
@@ -231,9 +230,9 @@ class StatusUseCases {
 
         //then we see the new one (or is it a list or something)
         val expectedOobservedSyncEvents = listOf(
-            NewEvent(ScheduledFileUpload("new")),
-            NewEvent(RunningFileUpload("new", 1)),
-            NewEvent(CompletedFileUpload("new")),
+            PartialSyncState(ScheduledFileUpload("new")),
+            PartialSyncState(RunningFileUpload("new", 1)),
+            PartialSyncState(CompletedFileUpload("new")),
         )
 
         assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
@@ -254,9 +253,9 @@ class StatusUseCases {
 
 
         val job = async {
-            val observedEvents = mutableListOf<NewEvent>()
+            val observedEvents = mutableListOf<PartialSyncState>()
             application.observeSyncEvents()
-                .filterIsInstance(NewEvent::class)
+                .filterIsInstance(PartialSyncState::class)
                 .take(1)
                 .collect(observedEvents::add)
             observedEvents
@@ -266,7 +265,7 @@ class StatusUseCases {
 
         //then we see the new one (or is it a list or something)
         val expectedOobservedSyncEvents = listOf(
-            NewEvent(ScheduledFileUpload("new2")),
+            PartialSyncState(ScheduledFileUpload("new2")),
          )
 
         assertThat(job.await(), equalTo(expectedOobservedSyncEvents))
@@ -276,9 +275,9 @@ class StatusUseCases {
     fun clearsSyncQueue() = runTest(testDispatcher) {
 
         val job = async {
-            val observedEvents = mutableListOf<FullState>()
+            val observedEvents = mutableListOf<FullSyncState>()
             application.observeSyncEvents()
-                .filterIsInstance(FullState::class)
+                .filterIsInstance(FullSyncState::class)
                 .take(2)
                 .collect(observedEvents::add)
             observedEvents
@@ -287,7 +286,7 @@ class StatusUseCases {
         application.clearSyncQueue()
         assertThat(adapters.uploadQueue.allRemoved, equalTo(true))
 
-        assertThat(job.await().last(), equalTo(FullState(emptyList())))
+        assertThat(job.await().last(), equalTo(FullSyncState(emptyList())))
 
     }
 }

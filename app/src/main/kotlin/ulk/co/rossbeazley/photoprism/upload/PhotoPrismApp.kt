@@ -4,19 +4,19 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import ulk.co.rossbeazley.photoprism.upload.audit.ApplicationCreatedAuditLog
+import kotlinx.coroutines.flow.onSubscription
+import ulk.co.rossbeazley.photoprism.upload.audit.ApplicationCreated
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditLogService
-import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.FailedAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.ScheduledAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.UploadedAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.UploadingAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetryAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.Debug
+import ulk.co.rossbeazley.photoprism.upload.audit.Failed
+import ulk.co.rossbeazley.photoprism.upload.audit.Scheduled
+import ulk.co.rossbeazley.photoprism.upload.audit.Uploaded
+import ulk.co.rossbeazley.photoprism.upload.audit.Uploading
+import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetry
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.BackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
 import ulk.co.rossbeazley.photoprism.upload.filesystem.Filesystem
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
-import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.LastUploadRepository
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.ScheduledFileUpload
@@ -35,7 +35,7 @@ class PhotoPrismApp(
 
     private val scope = CoroutineScope(dispatcher)
     private var flow: MutableSharedFlow<Event> =
-        MutableSharedFlow(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+        MutableSharedFlow(replay = 0, extraBufferCapacity = 10, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     init {
         jobSystem.register(::readyToUpload)
@@ -44,7 +44,7 @@ class PhotoPrismApp(
             findFilesMissingSinceLastLaunch()
             flow.collect(::observedPhoto)
         }
-        auditLogService.log(ApplicationCreatedAuditLog())
+        auditLogService.log(ApplicationCreated())
     }
 
     private suspend fun PhotoPrismApp.findFilesMissingSinceLastLaunch() {
@@ -52,11 +52,11 @@ class PhotoPrismApp(
         val element = lastUloadRepository.recall()
         val indexOf = list.indexOf(element)
         if (indexOf > 0) {
-            auditLogService.log(DebugAuditLog("Found some missed files to sync"))
+            auditLogService.log(Debug("Found some missed files to sync"))
             list.subList(0, indexOf).forEach {
                 observedPhoto(it)
             }
-            auditLogService.log(DebugAuditLog("Finished some missed files to sync $indexOf"))
+            auditLogService.log(Debug("Finished some missed files to sync $indexOf"))
 
         }
     }
@@ -72,10 +72,10 @@ class PhotoPrismApp(
 
     private suspend fun observedPhoto(atPath: String) {
         log("observedPhoto(atPath: $atPath)")
-        auditLogService.log(ScheduledAuditLog(atPath))
+        auditLogService.log(Scheduled(atPath))
         ScheduledFileUpload(atPath).also {
             uploadQueue.put(it)
-            flow.emit(NewEvent(it))
+            flow.emit(PartialSyncState(it))
         }
         jobSystem.schedule(atPath)
     }
@@ -85,9 +85,9 @@ class PhotoPrismApp(
             .peek(atFilePath)
             .willAttemptUpload()
             .also(uploadQueue::put)
-            .also { flow.emit(NewEvent(it)) }
+            .also { flow.emit(PartialSyncState(it)) }
 
-        auditLogService.log(UploadingAuditLog(atFilePath))
+        auditLogService.log(Uploading(atFilePath))
         val result: Result<Unit> = photoServer.upload(atFilePath)
         log("Result $result")
         return jobResult(result, queueEntry)
@@ -100,38 +100,39 @@ class PhotoPrismApp(
         result.isSuccess -> {
             val completedFileUpload = queueEntry.complete()
             uploadQueue.put(completedFileUpload)
-            lastUloadRepository.remember(queueEntry.filePath)
-            auditLogService.log(UploadedAuditLog(queueEntry.filePath))
-            flow.emit(NewEvent(completedFileUpload))
+            if(queueEntry.filePath.startsWith("/")) lastUloadRepository.remember(queueEntry.filePath)
+            auditLogService.log(Uploaded(queueEntry.filePath))
+            flow.emit(PartialSyncState(completedFileUpload))
             JobResult.Success
         }
 
         result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
             uploadQueue.put(queueEntry.failed())
-            auditLogService.log(FailedAuditLog(queueEntry.filePath))
-            flow.emit(NewEvent(queueEntry.failed()))
+            auditLogService.log(Failed(queueEntry.filePath))
+            flow.emit(PartialSyncState(queueEntry.failed()))
             JobResult.Failure
         }
 
         else -> {
             val queueEntry1 = queueEntry.retryLater()
             auditLogService.log(
-                WaitingToRetryAuditLog(
+                WaitingToRetry(
                     queueEntry.filePath,
                     queueEntry.attemptCount,
                     result.exceptionOrNull()
                 )
             )
-            flow.emit(NewEvent(queueEntry1))
+            flow.emit(PartialSyncState(queueEntry1))
             uploadQueue.put(queueEntry1)
             JobResult.Retry
         }
     }
 
     fun observeSyncEvents(): Flow<Event> {
-        return flow.also {
-            flow.tryEmit(
-                FullState(
+        return flow.onSubscription {
+
+        emit(
+                FullSyncState(
                     uploadQueue.all()
                 )
             )
@@ -140,11 +141,7 @@ class PhotoPrismApp(
 
     fun clearSyncQueue() {
         uploadQueue.removeAll()
-        flow.tryEmit(
-            FullState(
-                uploadQueue.all()
-            )
-        )
+        flow.tryEmit(FullSyncState(emptyList()))
     }
 
 }

@@ -4,18 +4,17 @@ import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.isA
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
-import ulk.co.rossbeazley.photoprism.upload.audit.ApplicationCreatedAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.FailedAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.ScheduledAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.UploadedAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.UploadingAuditLog
-import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetryAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.ApplicationCreated
+import ulk.co.rossbeazley.photoprism.upload.audit.Failed
+import ulk.co.rossbeazley.photoprism.upload.audit.Scheduled
+import ulk.co.rossbeazley.photoprism.upload.audit.Uploaded
+import ulk.co.rossbeazley.photoprism.upload.audit.Uploading
+import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetry
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
@@ -61,7 +60,7 @@ class UploadUseCases {
 
         // and an audit log entry is created // TODO rework this so we can observe the queue without caring how its implemented
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-        assertThat(capturedAuditLog!!, isA<ApplicationCreatedAuditLog>())
+        assertThat(capturedAuditLog!!, isA<ApplicationCreated>())
     }
 
     @Test
@@ -74,7 +73,7 @@ class UploadUseCases {
 
         // and an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-        assertThat(capturedAuditLog, equalTo(ScheduledAuditLog(expectedFilePath)))
+        assertThat(capturedAuditLog, equalTo(Scheduled(expectedFilePath)))
 
         // and a queue entry is created as scheduled
         val expectedQueueEntry = ScheduledFileUpload(expectedFilePath)
@@ -95,7 +94,7 @@ class UploadUseCases {
 
         // and an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-        assertThat(capturedAuditLog!!, equalTo(UploadingAuditLog(expectedFilePath)))
+        assertThat(capturedAuditLog!!, equalTo(Uploading(expectedFilePath)))
 
         // and the queue entry is updated to started
         val expectedQueueEntry = RunningFileUpload(expectedFilePath, 1)
@@ -121,7 +120,7 @@ class UploadUseCases {
 
         // and an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-        assertThat(capturedAuditLog!!, equalTo(UploadingAuditLog(expectedFilePath)))
+        assertThat(capturedAuditLog!!, equalTo(Uploading(expectedFilePath)))
 
         // and the queue entry is updated to started
         val expectedQueueEntry = RunningFileUpload(expectedFilePath, 1)
@@ -148,7 +147,7 @@ class UploadUseCases {
 
         // and an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-        assertThat(capturedAuditLog, equalTo(UploadedAuditLog(expectedFilePath)))
+        assertThat(capturedAuditLog, equalTo(Uploaded(expectedFilePath)))
 
         // and the job is marked as complete
         assertThat(uploadResult.await(), isA<JobResult.Success>())
@@ -170,7 +169,7 @@ class UploadUseCases {
 
         // and an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-        assertThat(capturedAuditLog, equalTo(WaitingToRetryAuditLog(
+        assertThat(capturedAuditLog, equalTo(WaitingToRetry(
             expectedFilePath,
             attempt = 1,
             optionalThrowable = photoServerException
@@ -193,7 +192,7 @@ class UploadUseCases {
         // then the queue entry is removed
         // and an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-        assertThat(capturedAuditLog, equalTo(UploadedAuditLog(expectedFilePath)))
+        assertThat(capturedAuditLog, equalTo(Uploaded(expectedFilePath)))
 
         // and the job is marked as complete
         assertThat(uploadResult.await(), isA<JobResult.Success>())
@@ -210,7 +209,7 @@ class UploadUseCases {
 
         // then an audit log is created
         val capturedAuditLog = adapters.auditLogService.capturedAuditLog
-            assertThat(capturedAuditLog, equalTo(FailedAuditLog(expectedFilePath)))
+            assertThat(capturedAuditLog, equalTo(Failed(expectedFilePath)))
 
         // and the job is marked as failed
         assertThat(uploadResult.await(), isA<JobResult.Failure>())

@@ -7,7 +7,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
-import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import java.util.Date
 
 class WorkManagerBackgroundJobFactory(
@@ -54,7 +54,7 @@ class WorkManagerBackgroundJobFactory(
 
         override fun doWork(): Result {
             (applicationContext as AppSingleton).auditRepository.log(
-                DebugAuditLog("Keepalive Task")
+                Debug("Keepalive Task")
             )
             println("keepalive ${Date().toGMTString()}")
             return Result.success()

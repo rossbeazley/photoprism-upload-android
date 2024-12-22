@@ -7,7 +7,7 @@ import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.startup.AppInitializer
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
-import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem
@@ -73,7 +73,7 @@ class AppSingleton : Application() {
                 val baos = ByteArrayOutputStream()
                 val writer = PrintWriter(baos)
                 e.printStackTrace(writer)
-                DebugAuditLog(
+                Debug(
                     "Caught exception starting service ${e.message} + ${baos.toString()}"
                 )
             }
@@ -87,7 +87,7 @@ class AppSingleton : Application() {
             throwable.printStackTrace(writer)
             throwable.stackTrace[0]
             auditRepository.log(
-                DebugAuditLog(
+                Debug(
                     """UNCaught exception ${throwable.message}
                         | ${throwable.stackTrace[0]}
                         |  ${throwable.stackTrace[1]}

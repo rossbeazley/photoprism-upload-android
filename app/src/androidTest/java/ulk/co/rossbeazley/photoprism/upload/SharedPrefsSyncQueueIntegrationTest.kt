@@ -196,6 +196,28 @@ class SharedPrefsSyncQueueIntegrationTest {
 
     }
 
+    @Test
+    fun oldestNoneAlphabeticalCompletedDownloadsRecordWillBeRemovedAfterFive() {
+        queue.put(CompletedFileUpload("2"))
+        queue.put(CompletedFileUpload("1"))
+        queue.put(CompletedFileUpload("3"))
+        queue.put(CompletedFileUpload("4"))
+        queue.put(CompletedFileUpload("5"))
+        queue.put(CompletedFileUpload("6"))
+        assertThat(
+            queue.all(),
+            List<UploadQueueEntry>::equals,
+            listOf(
+                CompletedFileUpload("1"),
+                CompletedFileUpload("3"),
+                CompletedFileUpload("4"),
+                CompletedFileUpload("5"),
+                CompletedFileUpload("6"),
+            )
+        )
+    }
+
+
     @After
     fun clearCache() {
         queue.removeAll()

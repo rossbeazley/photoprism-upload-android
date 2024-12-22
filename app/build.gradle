@@ -57,6 +57,9 @@ android {
     androidResources {
         noCompress 'png'
     }
+    buildFeatures {
+        compose true
+    }
 }
 
 dependencies {

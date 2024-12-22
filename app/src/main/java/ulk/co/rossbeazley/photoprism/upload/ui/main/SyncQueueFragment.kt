@@ -5,19 +5,37 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.*
 import androidx.fragment.app.Fragment
-import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
-import ulk.co.rossbeazley.photoprism.upload.FullState
-import ulk.co.rossbeazley.photoprism.upload.NewEvent
+import ulk.co.rossbeazley.photoprism.upload.Event
+import ulk.co.rossbeazley.photoprism.upload.FullSyncState
+import ulk.co.rossbeazley.photoprism.upload.PartialSyncState
+import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
 import ulk.co.rossbeazley.photoprism.upload.R
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
-import ulk.co.rossbeazley.photoprism.upload.audit.DebugAuditLog
+import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.UploadQueueEntry
 
 class SyncQueueFragment : Fragment() {
@@ -37,14 +55,14 @@ class SyncQueueFragment : Fragment() {
                     (requireContext().applicationContext as AppSingleton).photoPrismApp
                 lifecycleScope.launch {
                     uris.forEach { uri ->
-                        auditRepository.log(DebugAuditLog("Selected URI: $uri"))
+                        auditRepository.log(Debug("Selected URI: $uri"))
                         contentResolver.takePersistableUriPermission(uri, flag)
                         photoPrismApp.importPhoto(uri.toString())
                     }
                 }
 
             } else {
-                auditRepository.log(DebugAuditLog("NO Selected URI"))
+                auditRepository.log(Debug("NO Selected URI"))
             }
         }
 
@@ -58,28 +76,13 @@ class SyncQueueFragment : Fragment() {
         setHasOptionsMenu(true)
     }
 
-    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
-        i.inflate(R.layout.fragment_main, c, false)
-
-    private var logs = ""
-    private val syncs = mutableMapOf<String, UploadQueueEntry>()
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val findViewById = view.findViewById<TextView>(R.id.message) ?: return
-        lifecycleScope.launch {
-            val photoPrismApp =
-                (requireContext().applicationContext as AppSingleton).photoPrismApp
-
-            photoPrismApp.observeSyncEvents().collect { event ->
-                when(event) {
-                    is NewEvent -> syncs[event.event.filePath] = event.event
-                    is FullState -> {
-                        syncs.clear()
-                        syncs.putAll(event.events.associateBy { it.filePath })
-                    }
-                }
-                logs = syncs.values.joinToString(separator = "\n\n") { v -> v.toString() }
-                findViewById.text = logs
+    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View {
+        return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val photoPrismApp: PhotoPrismApp =
+                    (requireContext().applicationContext as AppSingleton).photoPrismApp
+                SyncQueue(photoPrismApp = photoPrismApp)
             }
         }
     }
@@ -106,4 +109,39 @@ class SyncQueueFragment : Fragment() {
 
     private fun doAddPhoto() =
         pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageAndVideo))
+}
+
+@Composable
+fun SyncQueue(
+    photoPrismApp: PhotoPrismApp,
+    startState: MutableMap<String, UploadQueueEntry> = mutableMapOf()
+) {
+    MaterialTheme {
+        val syncQueue by photoPrismApp.observeSyncEvents()
+            .map { event: Event ->
+                when (event) {
+                    is FullSyncState -> {
+                        startState.clear()
+                        startState.putAll(event.events.associateBy { it.filePath })
+                    }
+                    is PartialSyncState -> startState[event.event.filePath] = event.event
+                }
+                startState.values.toList()
+            }
+            .collectAsStateWithLifecycle(initialValue = emptyList())
+
+        val listState = rememberLazyListState()
+        LazyColumn(
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            items(syncQueue)  { log ->
+                Text(
+                    text = log.toString(),
+                    modifier = Modifier.padding(10.dp)
+                )
+                HorizontalDivider(color = Color.Black, thickness = 1.dp)
+            }
+        }
+    }
 }

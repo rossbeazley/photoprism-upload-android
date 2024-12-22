@@ -2,6 +2,9 @@ package ulk.co.rossbeazley.photoprism.upload.syncqueue
 
 import android.content.Context
 import androidx.core.content.edit
+import org.json.JSONArray
+
+private const val COMPLETED_LIST_KEY = "completedlist"
 
 class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQueue {
 
@@ -17,7 +20,16 @@ class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQu
             Context.MODE_PRIVATE
         )
 
+    private val sharedPrefsCompletedQueue =
+        context.getSharedPreferences(
+            "${basename}Completed",
+            Context.MODE_PRIVATE
+        )
+
     override fun put(queueEntry: UploadQueueEntry) {
+
+        garbaggeCollectAnyOldCompletedEntries(queueEntry)
+
         sharedPrefs.edit {
             putString(queueEntry.filePath, typeNameFrom(queueEntry))
         }
@@ -25,11 +37,25 @@ class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQu
         sharedPrefs2.edit {
             putInt(queueEntry.filePath, queueEntry.attemptCount)
         }
+    }
 
-        // count the completed items, remove oldest if more than 5
-        all().filterIsInstance<CompletedFileUpload>()
-            .dropLast(5)
-            .forEach(::remove)
+    private fun garbaggeCollectAnyOldCompletedEntries(queueEntry: UploadQueueEntry) {
+        if (queueEntry is CompletedFileUpload) {
+            val jsonArray = JSONArray(
+                sharedPrefs2
+                    .getString(COMPLETED_LIST_KEY, "[]")
+            ).put(queueEntry.filePath)
+
+            if (jsonArray.length() > 5) {
+                val remove: String = jsonArray.remove(0) as String
+                sharedPrefs2.edit {
+                    remove(remove)
+                }
+            }
+            sharedPrefsCompletedQueue.edit {
+                putString(COMPLETED_LIST_KEY, jsonArray.toString())
+            }
+        }
     }
 
     private fun typeNameFrom(queueEntry: UploadQueueEntry): String {
@@ -77,11 +103,14 @@ class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQu
             val entry: UploadQueueEntry = typeFromName(type, path, attempt)
             entry
         }
+        // non-complete first
+        // then complete in order of SP2
         return result
     }
 
     override fun removeAll() {
         sharedPrefs.edit().clear().apply()
         sharedPrefs2.edit().clear().apply()
+        sharedPrefsCompletedQueue.edit().clear().apply()
     }
 }
