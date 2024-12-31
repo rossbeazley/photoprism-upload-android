@@ -27,4 +27,10 @@
         android:title="clear workmanager"
         app:showAsAction="ifRoom"/>
 
+    <item
+        android:id="@+id/settings"
+        android:icon="@drawable/ic_settings_24"
+        android:title="settings"
+        app:showAsAction="ifRoom"/>
+
 </menu>

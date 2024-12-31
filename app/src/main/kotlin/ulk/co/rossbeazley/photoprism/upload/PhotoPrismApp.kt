@@ -15,6 +15,7 @@ import ulk.co.rossbeazley.photoprism.upload.audit.Uploading
 import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetry
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.BackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
+import ulk.co.rossbeazley.photoprism.upload.config.ReadonlyConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.filesystem.Filesystem
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.LastUploadRepository
@@ -29,7 +30,7 @@ class PhotoPrismApp(
     private val uploadQueue: SyncQueue,
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val photoServer: PhotoServer,
-    private val config: Config,
+    private val config: ReadonlyConfigRepository,
     private val lastUloadRepository: LastUploadRepository,
 ) {
 
@@ -39,7 +40,7 @@ class PhotoPrismApp(
 
     init {
         jobSystem.register(::readyToUpload)
-        val flow = fileSystem.watch(config.photoDirectory)
+        val flow = fileSystem.watch(config.photoDirectory) // TODO work out how to GC this
         scope.launch {
             findFilesMissingSinceLastLaunch()
             flow.collect(::observedPhoto)

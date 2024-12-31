@@ -1,7 +1,6 @@
 This will watch the camera folder and use webdav to upload images
 
-VERY NEXT: Compose version of sync queue then add restart
-
+VERY NEXT: Sync screen retry failed, then order complete last
 
 Sort of a task list:
 
@@ -12,12 +11,13 @@ Sort of a task list:
 
 audit logs: 
  rework audit logs so they are "proper", maybe a json object?
- add an audit log screen with actual list
- add a way to clear logs
+✓ add an audit log screen with actual list
+✓ add a way to clear logs
+  add "level" filter
 
 photo upload screen - stub:
- add list of synced photos, path and status
- render text list of synced photos
+✓ add list of synced photos, path and status
+✓ render text list of synced photos
  add thumbnail of photo to list
 
 upload task:
@@ -28,13 +28,18 @@ upload task:
 failed uploads:
  rework sync list add filter so just failed items
  add re-sync button
+ add re-sync all 
 
 later:
  show current workmanager items if possible
  restart background service
 
-
-
+configuration screen:
+ address, username, password
+ reconfigure http without restart
+ link to docs on generating app password
+ Test Connection
+ encryption of credentials, maybe credentials manager
 
 
 System Collaborators:

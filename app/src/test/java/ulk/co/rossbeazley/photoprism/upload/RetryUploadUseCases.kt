@@ -11,8 +11,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
+import ulk.co.rossbeazley.photoprism.upload.config.InMemoryConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
-import ulk.co.rossbeazley.photoprism.upload.fakes.FakeLastUploadRepositoy
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import kotlin.coroutines.resume
 
@@ -38,7 +38,7 @@ class RetryUploadUseCases {
             uploadQueue = adapters.uploadQueue,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
-            config = Config("any-directory-path", maxUploadAttempts),
+            config = InMemoryConfigRepository("any-directory-path", maxUploadAttempts),
             lastUloadRepository = adapters.lastUloadRepository
         )
 

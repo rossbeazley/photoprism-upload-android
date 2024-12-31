@@ -9,6 +9,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -36,6 +38,7 @@ import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
 import ulk.co.rossbeazley.photoprism.upload.R
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.UploadQueueEntry
 
 class SyncQueueFragment : Fragment() {
@@ -100,6 +103,9 @@ class SyncQueueFragment : Fragment() {
             R.id.auditlogs -> parentFragmentManager.beginTransaction()
                 .replace(R.id.container, AuditLogsFragment.newInstance())
                 .commitNow()
+            R.id.settings -> parentFragmentManager.beginTransaction()
+                .replace(R.id.container, ConfigurationFragment.newInstance())
+                .commitNow()
             else -> return super.onOptionsItemSelected(item)
         }
         return true
@@ -133,13 +139,26 @@ fun SyncQueue(
         val listState = rememberLazyListState()
         LazyColumn(
             state = listState,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             items(syncQueue)  { log ->
-                Text(
-                    text = log.toString(),
-                    modifier = Modifier.padding(10.dp)
-                )
+                Column {
+                    Text(
+                        text = log.javaClass.simpleName,
+                        fontSize = 8.sp,
+                    )
+                    Text(
+                        text = log.filePath,
+                        fontSize = 8.sp,
+                    )
+                    when(log) {
+                        is CompletedFileUpload -> Unit
+                        else -> Text(
+                            text = log.attemptCount.toString(),
+                            fontSize = 8.sp,
+                        )
+                    }
+                }
                 HorizontalDivider(color = Color.Black, thickness = 1.dp)
             }
         }

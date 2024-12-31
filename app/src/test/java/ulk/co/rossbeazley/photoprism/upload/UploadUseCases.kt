@@ -16,6 +16,7 @@ import ulk.co.rossbeazley.photoprism.upload.audit.Uploaded
 import ulk.co.rossbeazley.photoprism.upload.audit.Uploading
 import ulk.co.rossbeazley.photoprism.upload.audit.WaitingToRetry
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.JobResult
+import ulk.co.rossbeazley.photoprism.upload.config.InMemoryConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
@@ -45,7 +46,7 @@ class UploadUseCases {
             uploadQueue = adapters.uploadQueue,
             dispatcher = adapters.testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
-            config = Config("any-directory-path"),
+            config = InMemoryConfigRepository("any-directory-path"),
             lastUloadRepository = adapters.lastUloadRepository,
         )
     }

@@ -18,9 +18,8 @@ android {
         versionName "1.0"
 
         buildConfigField "String", "webdavHostName", "\""+properties.getProperty('webdav.host', "").toString()+"\""
-        buildConfigField "String", "webdavUsserName", "\""+properties.getProperty('webdav.user', "").toString()+"\""
-        buildConfigField "String", "authUserName", "\""+properties.getProperty('auth.username', "").toString()+"\""
-        buildConfigField "String", "authPassword", "\""+properties.getProperty('auth.password', "").toString()+"\""
+        buildConfigField "String", "webdavUserName", "\""+properties.getProperty('webdav.user', "").toString()+"\""
+        buildConfigField "String", "webdavPassword", "\""+properties.getProperty('webdav.password', "").toString()+"\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -70,6 +69,7 @@ dependencies {
         exclude group: 'junit', module: 'junit'
     }
 
+    implementation 'androidx.security:security-crypto:1.0.0'
     implementation 'androidx.activity:activity-ktx:1.9.3'
     implementation 'androidx.activity:activity-compose:1.9.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'

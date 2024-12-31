@@ -7,12 +7,11 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.config.InMemoryConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
-import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingAuditLogService
 import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingBackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.fakes.FakeFilesystem
 import ulk.co.rossbeazley.photoprism.upload.fakes.FakeLastUploadRepositoy
-import ulk.co.rossbeazley.photoprism.upload.fakes.FakeSyncQueue
 import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.RunningFileUpload
@@ -40,7 +39,7 @@ class UploadAfterRestartUseCases {
             uploadQueue = adapters.uploadQueue,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
-            config = Config("any-directory-path"),
+            config = InMemoryConfigRepository("any-directory-path"),
             lastUloadRepository = adapters.lastUloadRepository,
         )
     }
@@ -66,7 +65,7 @@ class UploadAfterRestartUseCases {
             uploadQueue = adapters.uploadQueue,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
-            config = Config("any-directory-path"),
+            config = InMemoryConfigRepository("any-directory-path"),
             lastUloadRepository = FakeLastUploadRepositoy(),
         )
 

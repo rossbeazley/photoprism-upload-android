@@ -6,7 +6,10 @@ import org.json.JSONArray
 
 private const val COMPLETED_LIST_KEY = "completedlist"
 
-class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQueue {
+class SharedPrefsSyncQueue(
+    basename: String = "boop",
+    context: Context,
+    private val maxCompletedItemsToRetain: Int = 20) : SyncQueue {
 
     private val sharedPrefs =
         context.getSharedPreferences(
@@ -46,7 +49,7 @@ class SharedPrefsSyncQueue(basename: String = "boop", context: Context) : SyncQu
                     .getString(COMPLETED_LIST_KEY, "[]")
             ).put(queueEntry.filePath)
 
-            if (jsonArray.length() > 5) {
+            if (jsonArray.length() > maxCompletedItemsToRetain) {
                 val remove: String = jsonArray.remove(0) as String
                 sharedPrefs2.edit {
                     remove(remove)

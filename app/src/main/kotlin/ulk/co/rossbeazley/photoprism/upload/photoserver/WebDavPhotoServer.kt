@@ -14,15 +14,14 @@ import okio.BufferedSink
 import okio.source
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import java.io.File
-import java.io.InputStream
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class WebDavPhotoServer(
-    val user: String,
-    val host: String,
-    val httpClient: OkHttpClient,
+    val user: ()->String,
+    val host: ()->String,
+    val httpClientFactory: ()->OkHttpClient,
     val contentResolver: ContentResolver
 ) : PhotoServer {
 
@@ -76,8 +75,8 @@ class WebDavPhotoServer(
     ) {
         try {
             val davResource = DavCollection(
-                httpClient,
-                "https://$user@$host/originals/$fileName".toHttpUrl(),
+                httpClientFactory(),
+                "https://${user()}@${host()}/originals/$fileName".toHttpUrl(),
             )
             log("About to put")
             davResource.put(body = body, ifNoneMatch = true) {

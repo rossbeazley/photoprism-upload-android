@@ -8,8 +8,6 @@ import java.util.concurrent.TimeUnit
 
 class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem {
 
-    private var cb: suspend (String) -> JobResult = { JobResult.Retry }
-
     override fun schedule(forPath: String): String {
         val request = OneTimeWorkRequestBuilder<WorkManagerBackgroundJobFactory.JobSystemWorker>()
             .setInputData(workDataOf("A" to forPath))
@@ -27,7 +25,7 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
 
     // TODO (rbeazley) delete this
     override fun register(callback: suspend (String) -> JobResult) {
-        this.cb = callback
+
     }
 
     fun startKeepAlive(workManager: WorkManager) {

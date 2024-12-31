@@ -7,13 +7,8 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.config.InMemoryConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
-import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingAuditLogService
-import ulk.co.rossbeazley.photoprism.upload.fakes.CapturingBackgroundJobSystem
-import ulk.co.rossbeazley.photoprism.upload.fakes.FakeFilesystem
-import ulk.co.rossbeazley.photoprism.upload.fakes.FakeLastUploadRepositoy
-import ulk.co.rossbeazley.photoprism.upload.fakes.FakeSyncQueue
-import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import kotlin.coroutines.resume
 
@@ -40,7 +35,7 @@ class SyncMissedFilesUseCases {
             lastUloadRepository = adapters.lastUloadRepository,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
-            config = Config("any-directory-path"),
+            config = InMemoryConfigRepository("any-directory-path"),
         )
     }
 
@@ -69,7 +64,7 @@ class SyncMissedFilesUseCases {
             lastUloadRepository = adapters.lastUloadRepository,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer,
-            config = Config("any-directory-path"),
+            config = InMemoryConfigRepository("any-directory-path"),
         )
 
         // then photoUploadScheduled
@@ -100,7 +95,7 @@ class SyncMissedFilesUseCases {
             lastUloadRepository = adapters.lastUloadRepository,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer,
-            config = Config("any-directory-path"),
+            config = InMemoryConfigRepository("any-directory-path"),
         )
 
         // then photoUploadScheduled
@@ -136,7 +131,7 @@ class SyncMissedFilesUseCases {
             lastUloadRepository = adapters.lastUloadRepository,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer,
-            config = Config("any-directory-path"),
+            config = InMemoryConfigRepository("any-directory-path"),
         )
 
         // then photoUploadScheduled

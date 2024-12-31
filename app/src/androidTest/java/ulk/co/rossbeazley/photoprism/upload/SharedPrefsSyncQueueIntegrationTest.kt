@@ -27,7 +27,7 @@ class SharedPrefsSyncQueueIntegrationTest {
 
     @Before
     fun createFolderInCache() {
-        queue = SharedPrefsSyncQueue(basename, InstrumentationRegistry.getInstrumentation().context)
+        queue = SharedPrefsSyncQueue(basename, InstrumentationRegistry.getInstrumentation().context, 5)
     }
 
     val filePath = "filepath${System.nanoTime()}"

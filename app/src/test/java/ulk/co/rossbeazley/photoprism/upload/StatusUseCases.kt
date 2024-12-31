@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import ulk.co.rossbeazley.photoprism.upload.config.InMemoryConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.fakes.Adapters
 import ulk.co.rossbeazley.photoprism.upload.fakes.MockPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
@@ -43,7 +44,7 @@ class StatusUseCases {
             uploadQueue = adapters.uploadQueue,
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
-            config = Config("any-directory-path", 2),
+            config = InMemoryConfigRepository("any-directory-path", 2),
             lastUloadRepository = adapters.lastUloadRepository,
         )
     }

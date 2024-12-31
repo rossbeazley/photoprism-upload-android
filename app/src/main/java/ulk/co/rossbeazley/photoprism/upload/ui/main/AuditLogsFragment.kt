@@ -118,6 +118,13 @@ class AuditLogsFragment : Fragment() {
                 true
             }
 
+            R.id.settings -> {
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.container, ConfigurationFragment.newInstance())
+                    .commitNow()
+                true
+            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

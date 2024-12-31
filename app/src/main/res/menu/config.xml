@@ -8,21 +8,15 @@
         app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/clearlogs"
-        android:icon="@drawable/ic_auditlog_delete"
-        android:title="delete sync queue"
-        app:showAsAction="ifRoom"/>
-
-    <item
         android:id="@+id/auditlogs"
         android:icon="@drawable/ic_audit_logs_24"
         android:title="audit logs"
         app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/settings"
-        android:icon="@drawable/ic_settings_24"
-        android:title="settings"
+        android:id="@+id/syncqueue"
+        android:icon="@drawable/ic_sync_queue_24"
+        android:title="sync queue"
         app:showAsAction="ifRoom"/>
 
 </menu>

@@ -10,6 +10,8 @@ import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
+import ulk.co.rossbeazley.photoprism.upload.config.InMemoryConfigRepository
+import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.buildPhotoServer
@@ -21,13 +23,19 @@ import java.io.PrintWriter
 
 class AppSingleton : Application() {
 
+    val config: SharedPrefsConfigRepository by lazy {
+        SharedPrefsConfigRepository(
+            context = this
+        )
+    }
+
     val auditRepository: AuditRepository by lazy {
         AuditRepository(
             PreferenceManager.getDefaultSharedPreferences(this)
         )
     }
 
-    val photoServer: PhotoServer by lazy { buildPhotoServer(contentResolver) }
+    val photoServer: PhotoServer by lazy { buildPhotoServer(contentResolver, config) }
     private val workManagerBackgroundJobSystem: WorkManagerBackgroundJobSystem =
         WorkManagerBackgroundJobSystem(this)
 
@@ -38,10 +46,7 @@ class AppSingleton : Application() {
             auditLogService = auditRepository,
             uploadQueue = SharedPrefsSyncQueue(context = this),
             photoServer = photoServer,
-            config = Config(
-                photoDirectory = "/storage/emulated/0/DCIM/Camera",
-                maxUploadAttempts = 10
-            ),
+            config = config,
             lastUloadRepository = SharedPrefsLastUploadRepository(context = this),
         )
     }
