@@ -3,28 +3,36 @@ package ulk.co.rossbeazley.photoprism.upload.ui.main
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.*
-import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts.*
+import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -39,6 +47,7 @@ import ulk.co.rossbeazley.photoprism.upload.R
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.CompletedFileUpload
+import ulk.co.rossbeazley.photoprism.upload.syncqueue.FailedFileUpload
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.UploadQueueEntry
 
 class SyncQueueFragment : Fragment() {
@@ -100,12 +109,10 @@ class SyncQueueFragment : Fragment() {
         when (item.itemId) {
             R.id.addphoto -> doAddPhoto()
             R.id.clearlogs -> (requireContext().applicationContext as AppSingleton).photoPrismApp.clearSyncQueue()
-            R.id.auditlogs -> parentFragmentManager.beginTransaction()
-                .replace(R.id.container, AuditLogsFragment.newInstance())
-                .commitNow()
             R.id.settings -> parentFragmentManager.beginTransaction()
                 .replace(R.id.container, ConfigurationFragment.newInstance())
                 .commitNow()
+
             else -> return super.onOptionsItemSelected(item)
         }
         return true
@@ -130,18 +137,20 @@ fun SyncQueue(
                         startState.clear()
                         startState.putAll(event.events.associateBy { it.filePath })
                     }
+
                     is PartialSyncState -> startState[event.event.filePath] = event.event
                 }
                 startState.values.toList()
             }
             .collectAsStateWithLifecycle(initialValue = emptyList())
 
+        val coroutineScope = rememberCoroutineScope()
         val listState = rememberLazyListState()
         LazyColumn(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
-            items(syncQueue)  { log ->
+            items(syncQueue) { log ->
                 Column {
                     Text(
                         text = log.javaClass.simpleName,
@@ -151,12 +160,28 @@ fun SyncQueue(
                         text = log.filePath,
                         fontSize = 8.sp,
                     )
-                    when(log) {
-                        is CompletedFileUpload -> Unit
-                        else -> Text(
-                            text = log.attemptCount.toString(),
-                            fontSize = 8.sp,
+                    when (log) {
+                        is CompletedFileUpload -> Icon(
+                            painter = painterResource(id = R.drawable.ic_completed_24),
+                            contentDescription = null,
                         )
+
+                        is FailedFileUpload -> Button(onClick = {
+                            coroutineScope.launch { photoPrismApp.importPhoto(log.filePath) }
+                        }) {
+                            Text(text = "Retry")
+                        }
+
+                        else -> {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_uploading_24),
+                                contentDescription = null,
+                            )
+                            Text(
+                                text = log.attemptCount.toString(),
+                                fontSize = 8.sp,
+                            )
+                        }
                     }
                 }
                 HorizontalDivider(color = Color.Black, thickness = 1.dp)

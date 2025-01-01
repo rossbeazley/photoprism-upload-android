@@ -17,7 +17,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 
 @Composable
-fun SettingsScreen(configRepo: SharedPrefsConfigRepository) {
+fun SettingsScreen(
+    configRepo: SharedPrefsConfigRepository,
+    navigateToAuditLogs: () -> Unit,
+    clearWorkManager: () -> Unit
+) {
     var serverurl by remember { mutableStateOf(configRepo.hostname) }
     var username by remember { mutableStateOf(configRepo.username) }
     var password by remember { mutableStateOf(configRepo.password) }
@@ -31,27 +35,38 @@ fun SettingsScreen(configRepo: SharedPrefsConfigRepository) {
 
     MaterialTheme {
         Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-            TextField(
-                label = { Text("Server URL") },
-                value = serverurl,
-                modifier = Modifier.width(IntrinsicSize.Max),
-                onValueChange = { serverurl = it }
-            )
-            TextField(
-                value = username,
-                onValueChange = { username = it },
-                modifier = Modifier.width(IntrinsicSize.Max),
-                label = { Text(text = "Username") }
-            )
-            TextField(
-                value = password,
-                visualTransformation = PasswordVisualTransformation(),
-                onValueChange = { password = it },
-                modifier = Modifier.width(IntrinsicSize.Max),
-                label = { Text(text = "Password") }
-            )
-            Button(onClick = updateSettings) {
-                Text(text = "Save")
+            Column {
+                TextField(
+                    label = { Text("Server URL") },
+                    value = serverurl,
+                    modifier = Modifier.width(IntrinsicSize.Max),
+                    onValueChange = { serverurl = it }
+                )
+                TextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    modifier = Modifier.width(IntrinsicSize.Max),
+                    label = { Text(text = "Username") }
+                )
+                TextField(
+                    value = password,
+                    visualTransformation = PasswordVisualTransformation(),
+                    onValueChange = { password = it },
+                    modifier = Modifier.width(IntrinsicSize.Max),
+                    label = { Text(text = "Password") }
+                )
+                Button(onClick = updateSettings) {
+                    Text(text = "Save")
+                }
+            }
+
+            Column {
+                Button(onClick = navigateToAuditLogs) {
+                    Text(text = "Debug Logs")
+                }
+                Button(onClick = clearWorkManager) {
+                    Text(text = "Clear work manager queue")
+                }
             }
         }
     }

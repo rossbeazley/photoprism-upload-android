@@ -2,30 +2,22 @@ package ulk.co.rossbeazley.photoprism.upload.ui.main
 
 import android.content.Context
 import android.os.Bundle
-import android.view.*
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
+import androidx.startup.AppInitializer
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
-import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
 import ulk.co.rossbeazley.photoprism.upload.R
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
+import ulk.co.rossbeazley.photoprism.upload.audit.Debug
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 
 class ConfigurationFragment : Fragment() {
@@ -51,7 +43,7 @@ class ConfigurationFragment : Fragment() {
                 (requireContext().applicationContext as AppSingleton).config
 
             setContent {
-                SettingsScreen(configRepo = configRepo)
+                SettingsScreen(configRepo = configRepo, navigateToAuditLogs = ::navigateToAuditLogs, clearWorkManager= ::clearWorkManager)
             }
         }
     }
@@ -64,10 +56,6 @@ class ConfigurationFragment : Fragment() {
     @Deprecated("whateva")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.auditlogs -> parentFragmentManager.beginTransaction()
-                .replace(R.id.container, AuditLogsFragment.newInstance())
-                .commitNow()
-
             R.id.syncqueue -> {
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.container, SyncQueueFragment.newInstance())
@@ -78,6 +66,19 @@ class ConfigurationFragment : Fragment() {
             else -> return super.onOptionsItemSelected(item)
         }
         return true
+    }
+
+    private fun navigateToAuditLogs() {
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.container, AuditLogsFragment.newInstance())
+            .commitNow()
+    }
+
+    private fun clearWorkManager() {
+        val workManager = AppInitializer.getInstance(requireContext())
+            .initializeComponent(WorkManagerInitialiser::class.java)
+        workManager.cancelAllWork()
+        auditRepository.log(Debug("Cleared work manager"))
     }
 
 }

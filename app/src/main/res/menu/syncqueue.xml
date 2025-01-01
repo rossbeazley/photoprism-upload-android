@@ -14,12 +14,6 @@
         app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/auditlogs"
-        android:icon="@drawable/ic_audit_logs_24"
-        android:title="audit logs"
-        app:showAsAction="ifRoom"/>
-
-    <item
         android:id="@+id/settings"
         android:icon="@drawable/ic_settings_24"
         android:title="settings"

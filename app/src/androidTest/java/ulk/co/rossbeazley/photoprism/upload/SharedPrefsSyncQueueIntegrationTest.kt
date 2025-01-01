@@ -27,7 +27,12 @@ class SharedPrefsSyncQueueIntegrationTest {
 
     @Before
     fun createFolderInCache() {
-        queue = SharedPrefsSyncQueue(basename, InstrumentationRegistry.getInstrumentation().context, 5)
+        queue =
+            SharedPrefsSyncQueue(
+                basename = basename,
+                context = InstrumentationRegistry.getInstrumentation().context,
+                maxCompletedItemsToRetain = 5,
+            )
     }
 
     val filePath = "filepath${System.nanoTime()}"
@@ -71,7 +76,8 @@ class SharedPrefsSyncQueueIntegrationTest {
         savedScheduledFileUploadEntry()
         val queue = SharedPrefsSyncQueue(
             basename,
-            InstrumentationRegistry.getInstrumentation().context
+            InstrumentationRegistry.getInstrumentation().context,
+            5
         )
         val expectedEntry = ScheduledFileUpload(filePath)
         val peekedEntry = queue.peek(filePath)
@@ -193,7 +199,6 @@ class SharedPrefsSyncQueueIntegrationTest {
                 CompletedFileUpload("6"),
             )
         )
-
     }
 
     @Test
@@ -217,12 +222,31 @@ class SharedPrefsSyncQueueIntegrationTest {
         )
     }
 
+    @Test
+    fun completedAreListedAfterIncomplete() {
+        queue.put(CompletedFileUpload("1"))
+        queue.put(CompletedFileUpload("3"))
+        queue.put(CompletedFileUpload("2"))
+        queue.put(ScheduledFileUpload("4"))
+        queue.put(ScheduledFileUpload("5"))
+        queue.put(ScheduledFileUpload("6"))
+        assertThat(
+            queue.all(),
+            List<UploadQueueEntry>::equals,
+            listOf(
+                ScheduledFileUpload("4"),
+                ScheduledFileUpload("5"),
+                ScheduledFileUpload("6"),
+                CompletedFileUpload("1"),
+                CompletedFileUpload("3"),
+                CompletedFileUpload("2"),
+            )
+        )
+    }
 
     @After
     fun clearCache() {
         queue.removeAll()
     }
-
-
 }
 

@@ -2,7 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-
     <item
         android:id="@+id/syncqueue"
         android:icon="@drawable/ic_sync_queue_24"
@@ -13,18 +12,6 @@
         android:id="@+id/clearlogs"
         android:icon="@drawable/ic_auditlog_delete"
         android:title="delete logs"
-        app:showAsAction="ifRoom"/>
-
-    <item
-        android:id="@+id/addphoto"
-        android:icon="@drawable/ic_add_a_photo_24"
-        android:title="add photo"
-        app:showAsAction="ifRoom"/>
-
-    <item
-        android:id="@+id/clearwork"
-        android:icon="@drawable/ic_workmanager_clear_24"
-        android:title="clear workmanager"
         app:showAsAction="ifRoom"/>
 
     <item

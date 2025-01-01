@@ -9,7 +9,8 @@ private const val COMPLETED_LIST_KEY = "completedlist"
 class SharedPrefsSyncQueue(
     basename: String = "boop",
     context: Context,
-    private val maxCompletedItemsToRetain: Int = 20) : SyncQueue {
+    private val maxCompletedItemsToRetain: Int = 10
+) : SyncQueue {
 
     private val sharedPrefs =
         context.getSharedPreferences(
@@ -23,42 +24,30 @@ class SharedPrefsSyncQueue(
             Context.MODE_PRIVATE
         )
 
-    private val sharedPrefsCompletedQueue =
-        context.getSharedPreferences(
-            "${basename}Completed",
-            Context.MODE_PRIVATE
-        )
-
     override fun put(queueEntry: UploadQueueEntry) {
 
-        garbaggeCollectAnyOldCompletedEntries(queueEntry)
-
-        sharedPrefs.edit {
-            putString(queueEntry.filePath, typeNameFrom(queueEntry))
-        }
-
-        sharedPrefs2.edit {
-            putInt(queueEntry.filePath, queueEntry.attemptCount)
+        when (queueEntry) {
+            is CompletedFileUpload -> garbaggeCollectAnyOldCompletedEntries(queueEntry)
+            else -> {
+                sharedPrefs.edit {
+                    putString(queueEntry.filePath, typeNameFrom(queueEntry))
+                }
+                sharedPrefs2.edit {
+                    putInt(queueEntry.filePath, queueEntry.attemptCount)
+                }
+            }
         }
     }
 
     private fun garbaggeCollectAnyOldCompletedEntries(queueEntry: UploadQueueEntry) {
-        if (queueEntry is CompletedFileUpload) {
-            val jsonArray = JSONArray(
-                sharedPrefs2
-                    .getString(COMPLETED_LIST_KEY, "[]")
-            ).put(queueEntry.filePath)
+        val jsonArray = JSONArray(
+            sharedPrefs2
+                .getString(COMPLETED_LIST_KEY, "[]")
+        ).put(queueEntry.filePath)
 
-            if (jsonArray.length() > maxCompletedItemsToRetain) {
-                val remove: String = jsonArray.remove(0) as String
-                sharedPrefs2.edit {
-                    remove(remove)
-                }
-            }
-            sharedPrefsCompletedQueue.edit {
-                putString(COMPLETED_LIST_KEY, jsonArray.toString())
-            }
-        }
+        if (jsonArray.length() > maxCompletedItemsToRetain) { jsonArray.remove(0) }
+        sharedPrefs2.edit { putString(COMPLETED_LIST_KEY, jsonArray.toString()) }
+        sharedPrefs.edit { remove(queueEntry) }
     }
 
     private fun typeNameFrom(queueEntry: UploadQueueEntry): String {
@@ -98,22 +87,32 @@ class SharedPrefsSyncQueue(
         return typeFromName(string, id, attempt)
     }
 
-    override fun all(): List<UploadQueueEntry> {
-        val result: List<UploadQueueEntry> = sharedPrefs.all.map {
-            val path = it.key ?: "unknown"
-            val type = it.value as String
-            val attempt = sharedPrefs2.getInt(path, 0)
-            val entry: UploadQueueEntry = typeFromName(type, path, attempt)
-            entry
+    override fun all(): List<UploadQueueEntry> =
+        incompleteUploadQueueEntries() + completedFileUploads()
+
+    private fun incompleteUploadQueueEntries(): List<UploadQueueEntry> = sharedPrefs.all.map {
+        val path = it.key ?: "unknown"
+        val type = it.value as String
+        val attempt = sharedPrefs2.getInt(path, 0)
+        typeFromName(type, path, attempt)
+    }
+
+    private fun completedFileUploads(): MutableList<CompletedFileUpload> {
+        val completeItems: MutableList<CompletedFileUpload> = mutableListOf()
+        val jsonString = sharedPrefs2.getString(COMPLETED_LIST_KEY, "[]")
+        val jsonArray = JSONArray(jsonString)
+        for (i in 0 until jsonArray.length()) {
+            completeItems.add(
+                CompletedFileUpload(
+                    jsonArray.getString(i)
+                )
+            )
         }
-        // non-complete first
-        // then complete in order of SP2
-        return result
+        return completeItems
     }
 
     override fun removeAll() {
         sharedPrefs.edit().clear().apply()
         sharedPrefs2.edit().clear().apply()
-        sharedPrefsCompletedQueue.edit().clear().apply()
     }
 }

@@ -43,26 +43,6 @@ class AuditLogsFragment : Fragment() {
     }
 
     lateinit var auditRepository: AuditRepository  //TODO custom fragment factory
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        pickMedia = registerForActivityResult(PickMultipleVisualMedia()) { uris ->
-            if (uris.isNotEmpty()) {
-                val flag = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                val contentResolver = requireContext().contentResolver
-                val photoPrismApp =
-                    (requireContext().applicationContext as AppSingleton).photoPrismApp
-                lifecycleScope.launch {
-                    uris.forEach { uri ->
-                        auditRepository.log(Debug("Selected URI: $uri"))
-                        contentResolver.takePersistableUriPermission(uri, flag)
-                        photoPrismApp.importPhoto(uri.toString())
-                    }
-                }
-            } else {
-                auditRepository.log(Debug("NO Selected URI"))
-            }
-        }
-    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -98,19 +78,6 @@ class AuditLogsFragment : Fragment() {
                 true
             }
 
-            R.id.clearwork -> {
-                val workManager = AppInitializer.getInstance(requireContext())
-                    .initializeComponent(WorkManagerInitialiser::class.java)
-                workManager.cancelAllWork()
-                auditRepository.log(Debug("Cleared work manager"))
-                true
-            }
-
-            R.id.addphoto -> {
-                doAddPhoto()
-                true
-            }
-
             R.id.syncqueue -> {
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.container, SyncQueueFragment.newInstance())
@@ -127,12 +94,6 @@ class AuditLogsFragment : Fragment() {
 
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    lateinit var pickMedia: ActivityResultLauncher<PickVisualMediaRequest>
-
-    private fun doAddPhoto() {
-        pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageAndVideo))
     }
 }
 
