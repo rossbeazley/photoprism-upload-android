@@ -12,13 +12,17 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
         val request = OneTimeWorkRequestBuilder<WorkManagerBackgroundJobFactory.JobSystemWorker>()
             .setInputData(workDataOf("A" to forPath))
             .addTag(forPath)
+            .setConstraints(Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+            )
             .setBackoffCriteria(BackoffPolicy.LINEAR, Duration.ofSeconds(30))
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
 
         // TODO (rbeazley) Should this instance be gotten from app initialiser
         val instance = WorkManager.getInstance(context)
-        log("About to enque $request ${request.id} + ${request.tags}")
+        log("About to enqueue $request ${request.id} + ${request.tags}")
         instance.enqueue(request)
         return forPath
     }
