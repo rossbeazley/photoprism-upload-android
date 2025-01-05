@@ -1,14 +1,20 @@
 package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.os.SystemClock
 import androidx.work.*
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
+import ulk.co.rossbeazley.photoprism.upload.FileWatcherService
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 class WorkManagerBackgroundJobFactory(
     private val callback: suspend (String) -> JobResult,
@@ -57,6 +63,7 @@ class WorkManagerBackgroundJobFactory(
                 Debug("Keepalive Task")
             )
             println("keepalive ${Date().toGMTString()}")
+            (applicationContext as AppSingleton).scheduleWakeupInCaseOfProcessDeath()
             return Result.success()
         }
     }

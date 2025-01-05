@@ -54,7 +54,8 @@ class FileWatcherService : Service() {
     private fun auditRepository() = (application as AppSingleton).auditRepository
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        auditRepository().log(Debug("Service onstartcommand"))
+        val stringExtra = intent.getStringExtra("inputExtra") ?: "EMPTY-INTENT-EXTRA"
+        auditRepository().log(Debug("Service onstartcommand ${stringExtra}"))
         doOnStartCommand()
         return START_NOT_STICKY
     }

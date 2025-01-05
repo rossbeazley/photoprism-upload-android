@@ -1,8 +1,13 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import android.Manifest
+import android.app.AlarmManager
 import android.app.Application
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.startup.AppInitializer
@@ -19,6 +24,7 @@ import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsLastUploadRepos
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsSyncQueue
 import java.io.ByteArrayOutputStream
 import java.io.PrintWriter
+import java.util.concurrent.TimeUnit
 
 
 class AppSingleton : Application() {
@@ -61,6 +67,7 @@ class AppSingleton : Application() {
             .initializeComponent(WorkManagerInitialiser::class.java)
 
         workManagerBackgroundJobSystem.startKeepAlive(workManager)
+        scheduleWakeupInCaseOfProcessDeath()
         // photoprism app -> background job system -> workmanager
         // -> workmanager config -> workmanager factory -> photoprism app
 
@@ -102,6 +109,32 @@ class AppSingleton : Application() {
                 )
             )
         }
+    }
+
+    fun scheduleWakeupInCaseOfProcessDeath() {
+        val serviceIntent = Intent(this, FileWatcherService::class.java)
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+        val pendingIntentRequestCode = 0
+
+        // maybe cancel the current alarm
+        val alarmIntent = PendingIntent.getService(
+            this,
+            pendingIntentRequestCode, serviceIntent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (alarmIntent != null && alarmManager != null) {
+            alarmManager.cancel(alarmIntent)
+        }
+
+        // schedule an alarm for a couple of hours time
+        alarmManager?.set(
+            AlarmManager.ELAPSED_REALTIME,
+            SystemClock.elapsedRealtime() + TimeUnit.HOURS.toMillis(2),
+            PendingIntent.getService(
+                this,
+                pendingIntentRequestCode, serviceIntent, PendingIntent.FLAG_IMMUTABLE
+            )
+        )
     }
 
     companion object {
