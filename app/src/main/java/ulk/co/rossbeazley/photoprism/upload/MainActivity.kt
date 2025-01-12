@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { it: Map<String, @JvmSuppressWildcards Boolean>? ->
-            startService(this)
+            startService(this, "MainActivity:requestPermissionLauncher")
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
             == PackageManager.PERMISSION_GRANTED
         ) {
-            startService(this)
+            startService(this, "MainActivity:onCreate")
         } else {
             requestPermissionLauncher.launch(
                 arrayOf(

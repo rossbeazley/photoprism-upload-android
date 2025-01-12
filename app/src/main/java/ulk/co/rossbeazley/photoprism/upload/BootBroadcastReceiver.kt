@@ -10,6 +10,6 @@ class BootBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_BOOT_COMPLETED) return
         AppSingleton.STARTED = true
-        startService(context)
+        startService(context, "BootBroadcastReceiver")
     }
 }

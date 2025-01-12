@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem {
 
     override fun schedule(forPath: String): String {
-        val request = OneTimeWorkRequestBuilder<WorkManagerBackgroundJobFactory.JobSystemWorker>()
+        val request = OneTimeWorkRequestBuilder<JobSystemWorker>()
             .setInputData(workDataOf("A" to forPath))
             .addTag(forPath)
             .setConstraints(Constraints.Builder()
@@ -34,7 +34,7 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
 
     fun startKeepAlive(workManager: WorkManager) {
         val uniqueWorkName = "keepalive"
-        val keepalive = PeriodicWorkRequestBuilder<WorkManagerBackgroundJobFactory.KeepaliveTask>(
+        val keepalive = PeriodicWorkRequestBuilder<KeepaliveTask>(
             repeatInterval = 1,
             repeatIntervalTimeUnit = TimeUnit.HOURS,
             flexTimeInterval = 15,

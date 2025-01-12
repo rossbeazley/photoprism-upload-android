@@ -15,7 +15,6 @@ import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
-import ulk.co.rossbeazley.photoprism.upload.config.InMemoryConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
@@ -42,7 +41,7 @@ class AppSingleton : Application() {
     }
 
     val photoServer: PhotoServer by lazy { buildPhotoServer(contentResolver, config) }
-    private val workManagerBackgroundJobSystem: WorkManagerBackgroundJobSystem =
+    val workManagerBackgroundJobSystem: WorkManagerBackgroundJobSystem =
         WorkManagerBackgroundJobSystem(this)
 
     val photoPrismApp: PhotoPrismApp by lazy {
@@ -71,7 +70,7 @@ class AppSingleton : Application() {
         // photoprism app -> background job system -> workmanager
         // -> workmanager config -> workmanager factory -> photoprism app
 
-        maybeStartService()
+        //maybeStartService()
     }
 
     private fun maybeStartService() {
@@ -80,7 +79,7 @@ class AppSingleton : Application() {
             == PackageManager.PERMISSION_GRANTED
         ) {
             try {
-                startService(this)
+                startService(this, "AppSingleton:maybeStartService")
             } catch (e: Exception) {
                 val baos = ByteArrayOutputStream()
                 val writer = PrintWriter(baos)
@@ -113,8 +112,9 @@ class AppSingleton : Application() {
 
     fun scheduleWakeupInCaseOfProcessDeath() {
         val serviceIntent = Intent(this, FileWatcherService::class.java)
+        serviceIntent.putExtra("inputExtra", "scheduleWakeupInCaseOfProcessDeath")
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
-        val pendingIntentRequestCode = 0
+        val pendingIntentRequestCode = 987
 
         // maybe cancel the current alarm
         val alarmIntent = PendingIntent.getService(
@@ -127,13 +127,14 @@ class AppSingleton : Application() {
         }
 
         // schedule an alarm for a couple of hours time
+        val pendingIntent = PendingIntent.getService(
+            this,
+            pendingIntentRequestCode, serviceIntent, PendingIntent.FLAG_IMMUTABLE
+        )
         alarmManager?.set(
             AlarmManager.ELAPSED_REALTIME,
-            SystemClock.elapsedRealtime() + TimeUnit.HOURS.toMillis(2),
-            PendingIntent.getService(
-                this,
-                pendingIntentRequestCode, serviceIntent, PendingIntent.FLAG_IMMUTABLE
-            )
+            SystemClock.elapsedRealtime() + TimeUnit.MINUTES.toMillis(80),
+            pendingIntent
         )
     }
 

@@ -13,9 +13,11 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import androidx.startup.AppInitializer
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.CHANNEL_ID
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.CHANNEL_NAME
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 
 class FileWatcherService : Service() {
     override fun onBind(p0: Intent?): IBinder? = null
@@ -23,17 +25,11 @@ class FileWatcherService : Service() {
     override fun onCreate() {
         super.onCreate()
         auditRepository().log(Debug("Service oncreate"))
-        doOnStartCommand()
     }
 
     override fun onDestroy() {
         auditRepository().log(Debug("Service destroy"))
         super.onDestroy()
-    }
-
-    override fun onTimeout(startId: Int) {
-        auditRepository().log(Debug("Service timeout"))
-        super.onTimeout(startId)
     }
 
     override fun onTrimMemory(level: Int) {
@@ -47,30 +43,42 @@ class FileWatcherService : Service() {
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> "TRIM_MEMORY_RUNNING_LOW"
             else -> level.toString()
         }
-        auditRepository().log(Debug("Service trim memory $levelDesc"))
+        //auditRepository().log(Debug("Service trim memory $levelDesc"))
         super.onTrimMemory(level)
     }
 
     private fun auditRepository() = (application as AppSingleton).auditRepository
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val stringExtra = intent.getStringExtra("inputExtra") ?: "EMPTY-INTENT-EXTRA"
-        auditRepository().log(Debug("Service onstartcommand ${stringExtra}"))
-        doOnStartCommand()
-        return START_NOT_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val stringExtra = intent?.getStringExtra("inputExtra") ?: "EMPTY-INTENT-EXTRA"
+        doOnStart(stringExtra, startId)
+        return START_STICKY
     }
 
-    private fun doOnStartCommand() {
-        auditRepository().log(Debug("Service do onstartcommand"))
+    private fun doOnStart(stringExtra: String, startId: Int) {
+        auditRepository().log(Debug("Service onstartcommand ${stringExtra} $startId"))
+        startKeepaliveJobs()
+        createNotificationChannel()
+        val notification: Notification = buildNotification()
+        startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        auditRepository().log(Debug("Service onstartcommand complete"))
+    }
 
+    private fun startKeepaliveJobs() {
+        with(application as AppSingleton) {
+            val workManager = AppInitializer.getInstance(this)
+                .initializeComponent(WorkManagerInitialiser::class.java)
+            workManagerBackgroundJobSystem.startKeepAlive(workManager)
+            scheduleWakeupInCaseOfProcessDeath()
+        }
+    }
+
+    private fun buildNotification(): Notification {
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
             this,
             0, notificationIntent, FLAG_IMMUTABLE
         )
-
-        createNotificationChannel()
-
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Auto Start Service")
             .setContentText("file sync")
@@ -82,7 +90,7 @@ class FileWatcherService : Service() {
             .setForegroundServiceBehavior(FOREGROUND_SERVICE_IMMEDIATE)
             .setChannelId(CHANNEL_ID)
             .build()
-        startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        return notification
     }
 
     private fun createNotificationChannel() {
@@ -101,9 +109,10 @@ class FileWatcherService : Service() {
     }
 }
 
-fun startService(context: Context) {
-    (context.applicationContext as AppSingleton).auditRepository.log(Debug("Calling startService"))
+fun startService(context: Context, starter: String) {
+    (context.applicationContext as AppSingleton).auditRepository.log(Debug("Calling startService for $starter"))
     val serviceIntent = Intent(context, FileWatcherService::class.java)
-    serviceIntent.putExtra("inputExtra", "AutoStartService")
+    serviceIntent.putExtra("inputExtra", starter)
+    // context.startService(serviceIntent)
     ContextCompat.startForegroundService(context, serviceIntent)
 }
