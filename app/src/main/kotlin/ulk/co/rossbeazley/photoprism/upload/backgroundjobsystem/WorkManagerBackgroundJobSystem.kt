@@ -1,6 +1,8 @@
 package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 
 import android.content.Context
+import android.net.Uri
+import android.provider.MediaStore
 import androidx.work.*
 import ulk.co.rossbeazley.photoprism.upload.log
 import java.time.Duration
@@ -12,9 +14,10 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
         val request = OneTimeWorkRequestBuilder<JobSystemWorker>()
             .setInputData(workDataOf("A" to forPath))
             .addTag(forPath)
-            .setConstraints(Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
             )
             .setBackoffCriteria(BackoffPolicy.LINEAR, Duration.ofSeconds(30))
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
@@ -35,7 +38,7 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
     fun startKeepAlive(workManager: WorkManager) {
         val uniqueWorkName = "keepalive"
         val keepalive = PeriodicWorkRequestBuilder<KeepaliveTask>(
-            repeatInterval = 1,
+            repeatInterval = 2,
             repeatIntervalTimeUnit = TimeUnit.HOURS,
             flexTimeInterval = 15,
             flexTimeIntervalUnit = TimeUnit.MINUTES
@@ -49,4 +52,5 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
             keepalive
         )
     }
+
 }

@@ -1,30 +1,30 @@
 package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 
 import android.content.Context
-import androidx.work.Worker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.future.asCompletableFuture
+import ulk.co.rossbeazley.photoprism.upload.AppSingleton
+import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 
 class JobSystemWorker(
     private val cb: suspend (String) -> JobResult,
     context: Context,
     private val parameters: WorkerParameters
-) : Worker(context, parameters) {
+) : CoroutineWorker(context, parameters) {
 
-    override fun doWork(): Result {
+    override suspend fun doWork(): Result {
+        val appSingleton = (applicationContext as AppSingleton)
+        appSingleton.auditRepository.log(Debug("Running JobSystemWorker"))
+        appSingleton.syncNotification.syncing()
         val path = parameters.inputData.getString("A") ?: ""
-        val job: Deferred<JobResult> = GlobalScope.async {
-            val deferred = async { cb(path) }
-            deferred.await()
-        }
-        val r: JobResult = job.asCompletableFuture().get()
+        val r = cb(path)
         return when (r) {
             JobResult.Retry -> Result.retry()
             JobResult.Failure -> Result.failure()
             else -> Result.success()
+        }.also {
+            appSingleton.syncNotification.finished()
+            appSingleton.auditRepository.log(Debug("Running JobSystemWorker"))
         }
     }
 }

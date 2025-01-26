@@ -1,20 +1,18 @@
 package ulk.co.rossbeazley.photoprism.upload
 
-import android.Manifest
-import android.app.AlarmManager
 import android.app.Application
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.SystemClock
-import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.startup.AppInitializer
+import androidx.work.WorkManager
+import androidx.work.WorkQuery
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystem
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.startContentUriWatching
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.startWorkmanagerLogging
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.filesystem.AndroidFileObserverFilesystem
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
@@ -23,22 +21,19 @@ import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsLastUploadRepos
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsSyncQueue
 import java.io.ByteArrayOutputStream
 import java.io.PrintWriter
-import java.util.concurrent.TimeUnit
 
 
 class AppSingleton : Application() {
 
     val config: SharedPrefsConfigRepository by lazy {
-        SharedPrefsConfigRepository(
-            context = this
-        )
+        SharedPrefsConfigRepository(context = this)
     }
 
     val auditRepository: AuditRepository by lazy {
-        AuditRepository(
-            PreferenceManager.getDefaultSharedPreferences(this)
-        )
+        AuditRepository(PreferenceManager.getDefaultSharedPreferences(this))
     }
+
+    val syncNotification: SyncNotification by lazy { SyncNotification(this) }
 
     val photoServer: PhotoServer by lazy { buildPhotoServer(contentResolver, config) }
     val workManagerBackgroundJobSystem: WorkManagerBackgroundJobSystem =
@@ -56,91 +51,36 @@ class AppSingleton : Application() {
         )
     }
 
-    override fun onCreate() {
-
-        installUncaughtExceptionLogger()
-
-        super.onCreate()
-
-        val workManager = AppInitializer.getInstance(this)
+    val workManager: WorkManager by lazy {
+        AppInitializer.getInstance(applicationContext)
             .initializeComponent(WorkManagerInitialiser::class.java)
-
-        workManagerBackgroundJobSystem.startKeepAlive(workManager)
-        scheduleWakeupInCaseOfProcessDeath()
-        // photoprism app -> background job system -> workmanager
-        // -> workmanager config -> workmanager factory -> photoprism app
-
-        //maybeStartService()
     }
 
-    private fun maybeStartService() {
-        if (
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            try {
-                startService(this, "AppSingleton:maybeStartService")
-            } catch (e: Exception) {
-                val baos = ByteArrayOutputStream()
-                val writer = PrintWriter(baos)
-                e.printStackTrace(writer)
-                Debug(
-                    "Caught exception starting service ${e.message} + ${baos.toString()}"
-                )
-            }
-        }
+    override fun onCreate() {
+        installUncaughtExceptionLogger(auditRepository)
+        super.onCreate()
+        startContentUriWatching(workManager)
+        logNumberOfWorkManagerJobs()
+        startWorkmanagerLogging(workManager)
     }
 
-    private fun installUncaughtExceptionLogger() {
-        Thread.currentThread().setUncaughtExceptionHandler { thread, throwable ->
-            val baos = ByteArrayOutputStream()
-            val writer = PrintWriter(baos)
-            throwable.printStackTrace(writer)
-            throwable.stackTrace[0]
-            auditRepository.log(
-                Debug(
-                    """UNCaught exception ${throwable.message}
-                        | ${throwable.stackTrace[0]}
-                        |  ${throwable.stackTrace[1]}
-                        |  ${throwable.stackTrace[2]}
-                        |  ${throwable.stackTrace[3]}"""
-                        .trimMargin()
-                )
-            )
-        }
-    }
-
-    fun scheduleWakeupInCaseOfProcessDeath() {
-        val serviceIntent = Intent(this, FileWatcherService::class.java)
-        serviceIntent.putExtra("inputExtra", "scheduleWakeupInCaseOfProcessDeath")
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
-        val pendingIntentRequestCode = 987
-
-        // maybe cancel the current alarm
-        val alarmIntent = PendingIntent.getService(
-            this,
-            pendingIntentRequestCode, serviceIntent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+    // TODO do we really need this ?
+    private fun logNumberOfWorkManagerJobs() {
+        val workInfos = workManager.getWorkInfos(
+            WorkQuery
+                .Builder
+                .fromTags(listOf("urimon"))
+                .build()
         )
-        if (alarmIntent != null && alarmManager != null) {
-            alarmManager.cancel(alarmIntent)
-        }
-
-        // schedule an alarm for a couple of hours time
-        val pendingIntent = PendingIntent.getService(
-            this,
-            pendingIntentRequestCode, serviceIntent, PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager?.set(
-            AlarmManager.ELAPSED_REALTIME,
-            SystemClock.elapsedRealtime() + TimeUnit.MINUTES.toMillis(80),
-            pendingIntent
+        workInfos.addListener(
+            {
+                auditRepository.log(Debug("Workmanager get work infos count: ${workInfos.get().size}"))
+            },
+            Dispatchers.Default.asExecutor()
         )
     }
 
     companion object {
-        const val CHANNEL_ID = "autoStartServiceChannel"
-        const val CHANNEL_NAME = "Upload Service Channel"
         var STARTED = false
     }
 }

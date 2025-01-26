@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
@@ -13,12 +14,7 @@ import ulk.co.rossbeazley.photoprism.upload.ui.main.SyncQueueFragment
 
 class MainActivity : AppCompatActivity() {
 
-    val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { it: Map<String, @JvmSuppressWildcards Boolean>? ->
-            startService(this, "MainActivity:requestPermissionLauncher")
-        }
+    val requestPermissionLauncher = registerForActivityResult(RequestMultiplePermissions()) {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,15 +25,13 @@ class MainActivity : AppCompatActivity() {
                 .commitNow()
         }
 
-        if (
-            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            startService(this, "MainActivity:onCreate")
-        } else {
+        val checkSelfPermission = ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.POST_NOTIFICATIONS
+        )
+        if (checkSelfPermission != PackageManager.PERMISSION_GRANTED) {
             requestPermissionLauncher.launch(
                 arrayOf(
-                    android.Manifest.permission.FOREGROUND_SERVICE,
                     android.Manifest.permission.POST_NOTIFICATIONS,
                     android.Manifest.permission.READ_MEDIA_IMAGES,
                     android.Manifest.permission.READ_MEDIA_AUDIO,
