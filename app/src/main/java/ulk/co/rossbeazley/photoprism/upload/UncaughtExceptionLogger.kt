@@ -13,12 +13,9 @@ fun installUncaughtExceptionLogger(auditRepository: AuditRepository) {
         throwable.stackTrace[0]
         auditRepository.log(
             Debug(
-                """UNCaught exception ${throwable.message}
-                        | ${throwable.stackTrace[0]}
-                        |  ${throwable.stackTrace[1]}
-                        |  ${throwable.stackTrace[2]}
-                        |  ${throwable.stackTrace[3]}"""
-                    .trimMargin()
+                "UNCaught exception in ${thread.name}: " +
+                        "${throwable.message} " +
+                        "| ${throwable.stackTrace.joinToString { " | " }}"
             )
         )
     }

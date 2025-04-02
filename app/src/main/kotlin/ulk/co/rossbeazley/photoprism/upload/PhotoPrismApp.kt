@@ -48,7 +48,7 @@ class PhotoPrismApp(
         auditLogService.log(ApplicationCreated())
     }
 
-    private suspend fun PhotoPrismApp.findFilesMissingSinceLastLaunch() {
+    suspend fun findFilesMissingSinceLastLaunch() {
         val list = fileSystem.list(config.photoDirectory)
         val element = lastUloadRepository.recall()
         val indexOf = list.indexOf(element)
@@ -107,7 +107,7 @@ class PhotoPrismApp(
             JobResult.Success
         }
 
-        result.isFailure && queueEntry.attemptCount == config.maxUploadAttempts -> {
+        result.isFailure && queueEntry.attemptCount >= config.maxUploadAttempts -> {
             uploadQueue.put(queueEntry.failed())
             auditLogService.log(Failed(queueEntry.filePath))
             flow.emit(PartialSyncState(queueEntry.failed()))

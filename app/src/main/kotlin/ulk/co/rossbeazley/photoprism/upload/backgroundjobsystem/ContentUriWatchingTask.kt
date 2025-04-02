@@ -3,27 +3,33 @@ package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.startup.AppInitializer
 import androidx.work.Constraints
+import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.Worker
 import androidx.work.WorkerParameters
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton
+import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
+import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
-import java.util.Date
 
 class ContentUriWatchingTask(
     appContext: Context,
     workerParams: WorkerParameters,
-) : Worker(appContext, workerParams) {
+    private val auditRepository: AuditRepository,
+    private val photoPrismApp: PhotoPrismApp,
+    val workManager: WorkManager,
+) : CoroutineWorker(appContext, workerParams) {
 
-    override fun doWork(): Result {
-        val appSingleton = applicationContext as AppSingleton
-        appSingleton.auditRepository.log(Debug("Content URI Watcher"))
-        startContentUriWatching(appSingleton.workManager)
-        appSingleton.auditRepository.log(Debug("Content URI Watcher Done"))
+    override suspend fun doWork(): Result {
+        try {
+            auditRepository.log(Debug("Content URI Watcher"))
+            startContentUriWatching(workManager)
+            photoPrismApp.findFilesMissingSinceLastLaunch()
+        } catch (e: Exception) {
+            auditRepository.log(Debug(" ContentUriWatchingTask exception ${e.message}"))
+        }
         return Result.success()
     }
 }

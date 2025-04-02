@@ -23,7 +23,7 @@ class WorkmanagerLoggingTask(
 
     @SuppressLint("RestrictedApi")
     override suspend fun doWork(): Result {
-        auditRepo.log(Debug("Workmanager Logging Task"))
+        //auditRepo.log(Debug("Workmanager Logging Task"))
         val workInfosFuture = workManager.getWorkInfos(
             WorkQuery
                 .Builder
@@ -40,7 +40,7 @@ class WorkmanagerLoggingTask(
 fun startWorkmanagerLogging(workManager: WorkManager) {
     val uniqueWorkName = "workManagerLogging"
     val keepalive = PeriodicWorkRequestBuilder<WorkmanagerLoggingTask>(
-        repeatInterval = 2,
+        repeatInterval = 1,
         repeatIntervalTimeUnit = TimeUnit.HOURS,
         flexTimeInterval = 15,
         flexTimeIntervalUnit = TimeUnit.MINUTES

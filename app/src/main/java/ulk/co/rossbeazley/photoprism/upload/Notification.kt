@@ -8,11 +8,15 @@ import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.media.AudioAttributes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE
+import androidx.core.app.NotificationCompat.PRIORITY_HIGH
 import androidx.core.app.NotificationCompat.PRIORITY_LOW
+import androidx.core.app.ShareCompat.IntentBuilder
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 
 class SyncNotification(private val appSingleton: Context) {
 
@@ -24,7 +28,7 @@ class SyncNotification(private val appSingleton: Context) {
     private fun showNotification() {
         val not = buildNotification(appSingleton)
         notificationManager.notify(1,not)
-
+        //start(appSingleton)
     }
     private var count = 0
 
@@ -34,16 +38,16 @@ class SyncNotification(private val appSingleton: Context) {
         }
         count++
     }
-    fun finished() {
+    suspend fun finished() {
         count--
         if(count==0) {
             hideNotification()
         }
     }
 
-
-    private fun hideNotification() {
+    private suspend fun hideNotification() {
         notificationManager.cancel(1)
+        //stop(appSingleton)
     }
 
 
@@ -60,9 +64,7 @@ class SyncNotification(private val appSingleton: Context) {
             .setColor((ContextCompat.getColor(context, android.R.color.holo_blue_light)))
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
-            .setPriority(PRIORITY_LOW)
-            // TODO check if this is needed
-            .setForegroundServiceBehavior(FOREGROUND_SERVICE_IMMEDIATE)
+            .setPriority(PRIORITY_HIGH)
             .setChannelId(CHANNEL_ID)
             .build()
         return notification
@@ -73,7 +75,7 @@ class SyncNotification(private val appSingleton: Context) {
         val channel = NotificationChannel(
             CHANNEL_ID,
             CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_HIGH
         )
 
         channel.enableLights(true)

@@ -62,4 +62,10 @@ class MainActivity : AppCompatActivity() {
                 )
             }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        (applicationContext as AppSingleton).auditRepository
+            .log(Debug("Main Activity on destroy"))
+    }
 }

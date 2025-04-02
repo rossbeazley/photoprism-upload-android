@@ -38,7 +38,7 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
     fun startKeepAlive(workManager: WorkManager) {
         val uniqueWorkName = "keepalive"
         val keepalive = PeriodicWorkRequestBuilder<KeepaliveTask>(
-            repeatInterval = 2,
+            repeatInterval = 3,
             repeatIntervalTimeUnit = TimeUnit.HOURS,
             flexTimeInterval = 15,
             flexTimeIntervalUnit = TimeUnit.MINUTES

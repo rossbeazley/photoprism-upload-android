@@ -62,6 +62,7 @@ class AppSingleton : Application() {
         startContentUriWatching(workManager)
         logNumberOfWorkManagerJobs()
         startWorkmanagerLogging(workManager)
+        workManagerBackgroundJobSystem.startKeepAlive(workManager)
     }
 
     // TODO do we really need this ?

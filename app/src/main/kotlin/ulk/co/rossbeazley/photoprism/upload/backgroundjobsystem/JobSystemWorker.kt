@@ -24,7 +24,7 @@ class JobSystemWorker(
             else -> Result.success()
         }.also {
             appSingleton.syncNotification.finished()
-            appSingleton.auditRepository.log(Debug("Running JobSystemWorker"))
+            appSingleton.auditRepository.log(Debug("Finished JobSystemWorker"))
         }
     }
 }
