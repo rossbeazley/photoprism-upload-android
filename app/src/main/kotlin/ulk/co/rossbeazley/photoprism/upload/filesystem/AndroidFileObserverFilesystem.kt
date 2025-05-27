@@ -45,6 +45,7 @@ class AndroidFileObserverFilesystem(testDispatcher: CoroutineDispatcher = Dispat
             log("File watch event $p0 $file")
             file ?: return
             if(file.startsWith(".")) return
+            if(file.contains(".trashed")) return
             scope.launch {
                 try {
                     emptyFlow.emit("$path/${file}")
