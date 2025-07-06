@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-fun PhotoPrismWebApp(modifier: Modifier, appUrlString: String) {
+fun PhotoPrismWebApp(modifier: Modifier = Modifier, appUrlString: String) {
     AndroidView(
         modifier = modifier
             .fillMaxHeight(),

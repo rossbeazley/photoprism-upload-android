@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import ulk.co.rossbeazley.photoprism.upload.BuildConfig
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 
 @Composable
@@ -37,10 +38,12 @@ fun SettingsScreen(
         Column(modifier = Modifier.Companion.width(IntrinsicSize.Max)) {
             Column {
                 TextField(
-                    label = { Text("Server URL") },
+                    label = { Text("Server hostname") },
                     value = serverurl,
                     modifier = Modifier.Companion.width(IntrinsicSize.Max),
-                    onValueChange = { serverurl = it }
+                    placeholder = { Text("hostname no scheme") },
+                    onValueChange = { serverurl = it },
+
                 )
                 TextField(
                     value = username,
@@ -57,6 +60,13 @@ fun SettingsScreen(
                 )
                 Button(onClick = updateSettings) {
                     Text(text = "Save")
+                }
+                Button(onClick = {
+                    serverurl = BuildConfig.webdavHostName
+                    username = BuildConfig.webdavUserName
+                    password = BuildConfig.webdavPassword
+                }) {
+                    Text(text = "Load Defaults")
                 }
             }
 
