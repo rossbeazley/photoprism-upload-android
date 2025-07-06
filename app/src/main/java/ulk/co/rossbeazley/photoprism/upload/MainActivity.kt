@@ -1,30 +1,50 @@
 package ulk.co.rossbeazley.photoprism.upload
 
 import android.app.ActivityManager
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.startup.AppInitializer
+import kotlinx.coroutines.launch
 
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.STARTED
+import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
-import ulk.co.rossbeazley.photoprism.upload.ui.main.SyncQueueFragment
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
+import ulk.co.rossbeazley.photoprism.upload.ui.ApplicationScaffold
 
-class MainActivity : AppCompatActivity() {
+private const val s = "Hello world!"
+
+class MainActivity : ComponentActivity() {
 
     val requestPermissionLauncher = registerForActivityResult(RequestMultiplePermissions()) {}
 
+    val auditRepository : AuditRepository by lazy {
+        (applicationContext as AppSingleton).auditRepository
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.container, SyncQueueFragment.newInstance())
-                .commitNow()
+        setContent {
+            ApplicationScaffold(
+                ::doAddPhoto,
+                AppInitializer.getInstance(LocalContext.current)
+                    .initializeComponent(WorkManagerInitialiser::class.java),
+                (LocalContext.current.applicationContext as AppSingleton).auditRepository,
+                (LocalContext.current.applicationContext as AppSingleton).photoPrismApp,
+                (LocalContext.current.applicationContext as AppSingleton).config
+            )
         }
-
         val checkSelfPermission = ContextCompat.checkSelfPermission(
             this,
             android.Manifest.permission.POST_NOTIFICATIONS
@@ -39,6 +59,27 @@ class MainActivity : AppCompatActivity() {
                 )
             )
         }
+
+        pickMedia = registerForActivityResult(PickMultipleVisualMedia()) { uris ->
+            if (uris.isNotEmpty()) {
+                val flag = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                val contentResolver = contentResolver
+                val photoPrismApp =
+                    (applicationContext as AppSingleton).photoPrismApp
+                lifecycleScope.launch {
+                    uris.forEach { uri ->
+                        auditRepository.log(Debug("Selected URI: $uri"))
+                        contentResolver.takePersistableUriPermission(uri, flag)
+                        photoPrismApp.importPhoto(uri.toString())
+                    }
+                }
+
+            } else {
+                auditRepository.log(Debug("NO Selected URI"))
+            }
+        }
+
+
         if (STARTED) return
         STARTED = true
         logAppExitReason()
@@ -53,7 +94,7 @@ class MainActivity : AppCompatActivity() {
             )
             .firstOrNull()
             ?.let {
-                (applicationContext as AppSingleton).auditRepository.log(
+                auditRepository.log(
                     Debug(
                         "Last close: ${it.description}\n" +
                                 "rss:${it.rss} pss:${it.pss}\n" +
@@ -65,7 +106,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        (applicationContext as AppSingleton).auditRepository
-            .log(Debug("Main Activity on destroy"))
+        auditRepository.log(Debug("Main Activity on destroy"))
     }
+
+    lateinit var pickMedia: ActivityResultLauncher<PickVisualMediaRequest>
+
+    fun doAddPhoto() =
+        pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageAndVideo))
 }
