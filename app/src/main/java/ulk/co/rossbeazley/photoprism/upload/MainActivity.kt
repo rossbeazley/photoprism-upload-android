@@ -11,16 +11,17 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.startup.AppInitializer
+import androidx.work.WorkManager
 import kotlinx.coroutines.launch
 
 import ulk.co.rossbeazley.photoprism.upload.AppSingleton.Companion.STARTED
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
+import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.ui.ApplicationScaffold
 
 private const val s = "Hello world!"
@@ -29,8 +30,21 @@ class MainActivity : ComponentActivity() {
 
     val requestPermissionLauncher = registerForActivityResult(RequestMultiplePermissions()) {}
 
-    val auditRepository : AuditRepository by lazy {
+    val auditRepository: AuditRepository by lazy {
         (applicationContext as AppSingleton).auditRepository
+    }
+
+    private val workManager: WorkManager by lazy {
+        AppInitializer.getInstance(this)
+            .initializeComponent(WorkManagerInitialiser::class.java)
+    }
+
+    private val photoPrismApp: PhotoPrismApp by lazy {
+        (applicationContext as AppSingleton).photoPrismApp
+    }
+
+    private val configRepository: SharedPrefsConfigRepository by lazy {
+        (applicationContext as AppSingleton).config
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,11 +52,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             ApplicationScaffold(
                 ::doAddPhoto,
-                AppInitializer.getInstance(LocalContext.current)
-                    .initializeComponent(WorkManagerInitialiser::class.java),
-                (LocalContext.current.applicationContext as AppSingleton).auditRepository,
-                (LocalContext.current.applicationContext as AppSingleton).photoPrismApp,
-                (LocalContext.current.applicationContext as AppSingleton).config
+                workManager,
+                auditRepository,
+                photoPrismApp,
+                configRepository
             )
         }
         val checkSelfPermission = ContextCompat.checkSelfPermission(
@@ -64,8 +77,7 @@ class MainActivity : ComponentActivity() {
             if (uris.isNotEmpty()) {
                 val flag = Intent.FLAG_GRANT_READ_URI_PERMISSION
                 val contentResolver = contentResolver
-                val photoPrismApp =
-                    (applicationContext as AppSingleton).photoPrismApp
+                val photoPrismApp = photoPrismApp
                 lifecycleScope.launch {
                     uris.forEach { uri ->
                         auditRepository.log(Debug("Selected URI: $uri"))
@@ -73,7 +85,6 @@ class MainActivity : ComponentActivity() {
                         photoPrismApp.importPhoto(uri.toString())
                     }
                 }
-
             } else {
                 auditRepository.log(Debug("NO Selected URI"))
             }

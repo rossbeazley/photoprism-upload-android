@@ -1,4 +1,4 @@
-package ulk.co.rossbeazley.photoprism.upload.ui.main
+package ulk.co.rossbeazley.photoprism.upload.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -34,25 +34,25 @@ fun SettingsScreen(
     }
 
     MaterialTheme {
-        Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+        Column(modifier = Modifier.Companion.width(IntrinsicSize.Max)) {
             Column {
                 TextField(
                     label = { Text("Server URL") },
                     value = serverurl,
-                    modifier = Modifier.width(IntrinsicSize.Max),
+                    modifier = Modifier.Companion.width(IntrinsicSize.Max),
                     onValueChange = { serverurl = it }
                 )
                 TextField(
                     value = username,
                     onValueChange = { username = it },
-                    modifier = Modifier.width(IntrinsicSize.Max),
+                    modifier = Modifier.Companion.width(IntrinsicSize.Max),
                     label = { Text(text = "Username") }
                 )
                 TextField(
                     value = password,
                     visualTransformation = PasswordVisualTransformation(),
                     onValueChange = { password = it },
-                    modifier = Modifier.width(IntrinsicSize.Max),
+                    modifier = Modifier.Companion.width(IntrinsicSize.Max),
                     label = { Text(text = "Password") }
                 )
                 Button(onClick = updateSettings) {

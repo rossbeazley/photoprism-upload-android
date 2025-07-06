@@ -16,7 +16,7 @@ import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
-import ulk.co.rossbeazley.photoprism.upload.ui.main.SettingsScreen
+import ulk.co.rossbeazley.photoprism.upload.ui.SettingsScreen
 
 
 data object Home
