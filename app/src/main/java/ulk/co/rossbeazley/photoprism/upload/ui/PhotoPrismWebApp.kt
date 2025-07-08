@@ -1,15 +1,31 @@
 package ulk.co.rossbeazley.photoprism.upload.ui
 
+import android.util.Log
 import android.view.ViewGroup
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 fun PhotoPrismWebApp(modifier: Modifier = Modifier, appUrlString: String) {
+    var isEnabled by remember { mutableStateOf(true) }
+    var onBack: () -> Unit = {
+        Log.i("NAV", "back")
+    }
+    BackHandler(enabled = isEnabled) {
+        Log.i("NAV", "backhandler")
+        onBack()
+    }
+
     AndroidView(
         modifier = modifier
             .fillMaxHeight(),
@@ -18,7 +34,23 @@ fun PhotoPrismWebApp(modifier: Modifier = Modifier, appUrlString: String) {
                 .apply {
                     settings.apply {
                         javaScriptEnabled = true
-                        webViewClient = WebViewClient()
+                        webViewClient = object : WebViewClient() {
+                            override fun doUpdateVisitedHistory(
+                                view: WebView?,
+                                url: String?,
+                                isReload: Boolean
+                            ) {
+                                val isNotLogin =
+                                    url != "https://photo.rossbeazley.co.uk/library/login"
+                                val isNotBrowse =
+                                    url != "https://photo.rossbeazley.co.uk/library/browse"
+                                isEnabled = view?.canGoBack() == true
+                                        && isNotLogin
+                                        && isNotBrowse
+                                Log.i("NAV", "doUpdateVisitedHistory $isEnabled : $url")
+                                super.doUpdateVisitedHistory(view, url, isReload)
+                            }
+                        }
                         loadWithOverviewMode = false
                         useWideViewPort = false
                         setSupportZoom(false)
@@ -26,16 +58,29 @@ fun PhotoPrismWebApp(modifier: Modifier = Modifier, appUrlString: String) {
                         databaseEnabled = true
                         databasePath = context.cacheDir.path
                         domStorageEnabled = true
-
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onCloseWindow(window: WebView?) {
+                                Log.i("NAV", "onCloseWindow")
+                                super.onCloseWindow(window)
+                            }
+                        }
                     }
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
+                    loadUrl(appUrlString)
                 }
         },
         update = { webView ->
-            webView.loadUrl(appUrlString)
+            onBack = {
+                Log.i("NAV", "back to webview")
+                webView.goBack()
+            }
+        },
+        onRelease = { webView ->
+            Log.i("NAV", "destroy webview")
+            webView.destroy()
         }
     )
 }

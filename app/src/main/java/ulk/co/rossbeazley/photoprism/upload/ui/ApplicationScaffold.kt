@@ -1,5 +1,6 @@
 package ulk.co.rossbeazley.photoprism.upload.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -13,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigationevent.NavigationEventCallback
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.work.WorkManager
 import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
@@ -20,8 +23,6 @@ import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 
 data object Home
-data object ClearLogs
-data object AddPhoto
 data object SyncLogs
 data object AuditLogs
 data object Settings
@@ -35,7 +36,19 @@ fun ApplicationScaffold(
     configRepository: SharedPrefsConfigRepository
 ) {
 
+
+//    LocalNavigationEventDispatcherOwner.current?.navigationEventDispatcher?.addCallback(
+//        callback = object : NavigationEventCallback(true) {
+//
+//        }
+//    )
+
     val backStack = remember { mutableStateListOf<Any>(Home) }
+//    BackHandler(true) {
+//        backStack.removeLastOrNull()
+//
+//    }
+
     Scaffold(
         containerColor = Color.White,
         floatingActionButton = {
@@ -44,7 +57,10 @@ fun ApplicationScaffold(
         NavDisplay(
             modifier = Modifier.padding(it),
             backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
+//            onBack = {
+//        //            backStack.removeLastOrNull()
+//
+//            },
             transitionSpec = {
                 // Slide in from right when navigating forward
                 slideInHorizontally(initialOffsetX = { it }) togetherWith
@@ -56,7 +72,7 @@ fun ApplicationScaffold(
             },
             entryProvider = entryProvider {
                 entry<Home> {
-                    PhotoPrismWebApp(appUrlString = "https://photo.rossbeazley.co.uk/")
+                    PhotoPrismWebApp(appUrlString = "https://photo.rossbeazley.co.uk/library/browse")
                 }
 
                 entry<AuditLogs> {
