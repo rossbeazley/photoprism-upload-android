@@ -19,19 +19,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.work.WorkManager
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.serialization.Serializable
 import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
+import kotlin.Int
 
-data object Home
-data object SyncLogs
-data object AuditLogs
-data object Settings
+@Serializable data object Home : NavKey
+
+@Serializable data object SyncQueue : NavKey
+
+@Serializable data object AuditLogs : NavKey
+
+@Serializable data object Settings : NavKey
+
+@Serializable data object Onboarding : NavKey // TODO screen for
 
 @Composable
 fun ApplicationScaffold(
@@ -41,7 +51,8 @@ fun ApplicationScaffold(
     app: PhotoPrismApp,
     configRepository: SharedPrefsConfigRepository
 ) {
-    val backStack = remember { mutableStateListOf<Any>(Home) }
+//    val backStack = remember { mutableStateListOf<Any>(Home) }
+    val backStack = rememberNavBackStack(Home)
 
     var extraAction by remember { mutableStateOf<MenuItem?>(null) }
 
@@ -55,7 +66,7 @@ fun ApplicationScaffold(
             doAddPhoto()
         },
         MenuItem(label = "Sync Queue", icon = Icons.Filled.Menu) {
-            backStack.add(SyncLogs)
+            backStack.add(SyncQueue)
             extraAction = MenuItem(label = "Clear Sync Queue", icon = Icons.Filled.Clear) {
                 app.clearSyncQueue()
             }
@@ -80,7 +91,8 @@ fun ApplicationScaffold(
             },
             onBack = {
                 repeat(it) { backStack.removeAt(backStack.lastIndex) }
-                extraAction = null // if we pop back to something with an extra action, how do we show it?
+                extraAction =
+                    null // if we pop back to something with an extra action, how do we show it?
                 // we could pass in a lambda to set this action so the screen always sets it ?
             },
             popTransitionSpec = {
@@ -88,35 +100,37 @@ fun ApplicationScaffold(
                         slideOutHorizontally(targetOffsetX = { it })
             },
             entryProvider = entryProvider {
-                entry<Home> {
-                    PhotoPrismWebApp(appUrlString = "https://photo.rossbeazley.co.uk/library/browse")
-                }
-
-                entry<AuditLogs> {
-                    AuditLogsList(auditRepository)
-                }
-
+                entry<Home> { PhotoPrismWebApp(hostname = configRepository.hostname) }
+                entry<AuditLogs> { AuditLogsList(auditRepository) }
+                entry<SyncQueue> { SyncQueue(app) }
+                entry<Onboarding> { OnboardingScreen(configRepository) }
                 entry<Settings> {
                     SettingsScreen(
                         configRepo = configRepository,
-                        clearWorkManager = {
-                            workManager.cancelAllWork()
-                            auditRepository.log(Debug("Cleared work manager"))
+                        developerSettings = {
+                            DeveloperSettings(
+                                configRepo = configRepository,
+                                clearWorkManager = {
+                                    workManager.cancelAllWork()
+                                    auditRepository.log(Debug("Cleared work manager"))
+                                },
+                                navigateToAuditLogs = {
+                                    backStack.add(AuditLogs)
+                                    extraAction = MenuItem(
+                                        label = "Clear Debug Logs",
+                                        icon = Icons.Filled.Clear
+                                    ) {
+                                        auditRepository.clearAll()
+                                        auditRepository.log(Debug("Cleared logs"))
+                                    }
+                                },
+                                auditRepository = auditRepository,
+                                photoPrismApp = app,
+                                /** TODO pass in work manager livedata or flow **/
+                                workManagerJobCountFlow = flowOf<Int>(4),
+                            )
                         },
-                        navigateToAuditLogs = {
-                            backStack.add(AuditLogs)
-                            extraAction = MenuItem(label = "Clear Debug Logs", icon = Icons.Filled.Clear) {
-                                auditRepository.clearAll()
-                                auditRepository.log(Debug("Cleared logs"))
-                            }
-                        },
-                        auditRepository = auditRepository,
-                        photoPrismApp = app,
                     )
-                }
-
-                entry<SyncLogs> {
-                    SyncQueue(app)
                 }
             })
     }

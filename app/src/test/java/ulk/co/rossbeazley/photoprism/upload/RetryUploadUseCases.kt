@@ -39,7 +39,7 @@ class RetryUploadUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = InMemoryConfigRepository("any-directory-path", maxUploadAttempts),
-            lastUloadRepository = adapters.lastUloadRepository
+            lastUploadRepository = adapters.lastUloadRepository
         )
 
     }

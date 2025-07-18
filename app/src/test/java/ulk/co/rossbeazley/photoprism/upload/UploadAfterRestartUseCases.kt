@@ -40,7 +40,7 @@ class UploadAfterRestartUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = InMemoryConfigRepository("any-directory-path"),
-            lastUloadRepository = adapters.lastUloadRepository,
+            lastUploadRepository = adapters.lastUloadRepository,
         )
     }
 
@@ -66,7 +66,7 @@ class UploadAfterRestartUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = InMemoryConfigRepository("any-directory-path"),
-            lastUloadRepository = FakeLastUploadRepositoy(),
+            lastUploadRepository = FakeLastUploadRepositoy(),
         )
 
         // when the system is ready to run our job

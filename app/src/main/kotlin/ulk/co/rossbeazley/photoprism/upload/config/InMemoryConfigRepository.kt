@@ -9,7 +9,8 @@ class InMemoryConfigRepository(
     override val username: String = BuildConfig.webdavUserName,
     override val hostname: String = BuildConfig.webdavHostName,
     override val password: String = BuildConfig.webdavPassword,
-
+    override val developerMode: Boolean = true,
+    override val useMobileData: Boolean = true,
     ) : ReadonlyConfigRepository {
 
     private val observers: MutableList<WeakReference<() -> Unit>> = mutableListOf()

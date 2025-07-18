@@ -7,4 +7,6 @@ interface ReadonlyConfigRepository {
     val hostname: String
     val password: String
     fun onChange(function: () -> Unit)
+    val developerMode: Boolean
+    val useMobileData: Boolean
 }

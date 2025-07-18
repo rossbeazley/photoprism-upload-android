@@ -16,7 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-fun PhotoPrismWebApp(modifier: Modifier = Modifier, appUrlString: String) {
+fun PhotoPrismWebApp(modifier: Modifier = Modifier, hostname: String) {
+    val browseUrl = "https://$hostname/library/browse"
     var isEnabled by remember { mutableStateOf(true) }
     var onBack: () -> Unit = {
         Log.i("NAV", "back")
@@ -41,9 +42,9 @@ fun PhotoPrismWebApp(modifier: Modifier = Modifier, appUrlString: String) {
                                 isReload: Boolean
                             ) {
                                 val isNotLogin =
-                                    url != "https://photo.rossbeazley.co.uk/library/login"
+                                    url != "https://$hostname/library/login"
                                 val isNotBrowse =
-                                    url != "https://photo.rossbeazley.co.uk/library/browse"
+                                    url != browseUrl
                                 isEnabled = view?.canGoBack() == true
                                         && isNotLogin
                                         && isNotBrowse
@@ -69,7 +70,7 @@ fun PhotoPrismWebApp(modifier: Modifier = Modifier, appUrlString: String) {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                    loadUrl(appUrlString)
+                    loadUrl(browseUrl)
                 }
         },
         update = { webView ->

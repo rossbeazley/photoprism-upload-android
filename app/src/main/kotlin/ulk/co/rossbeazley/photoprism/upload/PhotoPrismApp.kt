@@ -31,12 +31,16 @@ class PhotoPrismApp(
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val photoServer: PhotoServer,
     private val config: ReadonlyConfigRepository,
-    private val lastUloadRepository: LastUploadRepository,
+    private val lastUploadRepository: LastUploadRepository,
 ) {
 
     private val scope = CoroutineScope(dispatcher)
     private var flow: MutableSharedFlow<Event> =
-        MutableSharedFlow(replay = 0, extraBufferCapacity = 10, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+        MutableSharedFlow(
+            replay = 0,
+            extraBufferCapacity = 10,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
 
     init {
         jobSystem.register(::readyToUpload)
@@ -50,7 +54,7 @@ class PhotoPrismApp(
 
     suspend fun findFilesMissingSinceLastLaunch() {
         val list = fileSystem.list(config.photoDirectory)
-        val element = lastUloadRepository.recall()
+        val element = lastUploadRepository.recall()
         val indexOf = list.indexOf(element)
         if (indexOf > 0) {
             auditLogService.log(Debug("Found some missed files to sync"))
@@ -101,7 +105,7 @@ class PhotoPrismApp(
         result.isSuccess -> {
             val completedFileUpload = queueEntry.complete()
             uploadQueue.put(completedFileUpload)
-            if(queueEntry.filePath.startsWith("/")) lastUloadRepository.remember(queueEntry.filePath)
+            if (queueEntry.filePath.startsWith("/")) lastUploadRepository.remember(queueEntry.filePath)
             auditLogService.log(Uploaded(queueEntry.filePath))
             flow.emit(PartialSyncState(completedFileUpload))
             JobResult.Success
@@ -130,14 +134,7 @@ class PhotoPrismApp(
     }
 
     fun observeSyncEvents(): Flow<Event> {
-        return flow.onSubscription {
-
-        emit(
-                FullSyncState(
-                    uploadQueue.all()
-                )
-            )
-        }
+        return flow.onSubscription { emit(FullSyncState(uploadQueue.all())) }
     }
 
     fun clearSyncQueue() {

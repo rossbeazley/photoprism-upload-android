@@ -45,7 +45,7 @@ class StatusUseCases {
             dispatcher = testDispatcher,
             photoServer = adapters.photoServer as PhotoServer,
             config = InMemoryConfigRepository("any-directory-path", 2),
-            lastUloadRepository = adapters.lastUloadRepository,
+            lastUploadRepository = adapters.lastUloadRepository,
         )
     }
 

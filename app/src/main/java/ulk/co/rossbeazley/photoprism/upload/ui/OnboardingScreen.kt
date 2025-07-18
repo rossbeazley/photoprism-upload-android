@@ -34,26 +34,24 @@ import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 
 @Composable
-fun SettingsScreen(
+fun OnboardingScreen(
     configRepo: SharedPrefsConfigRepository,
-    developerSettings: @Composable ()->Unit,
 ) {
     var serverurl by remember { mutableStateOf(configRepo.hostname) }
     var username by remember { mutableStateOf(configRepo.username) }
     var password by remember { mutableStateOf(configRepo.password) }
-    var retryCount by remember { mutableIntStateOf(configRepo.maxUploadAttempts) }
 
     val updateSettings = {
         configRepo.save(
             username = username,
             password = password,
             hostname = serverurl,
-            maxUploadAttempts = retryCount
         )
     }
 
     MaterialTheme {
         Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
+            Text("Lets connect to your server", modifier = Modifier.fillMaxWidth())
             Column(modifier = Modifier.fillMaxWidth()) {
                 TextField(
                     label = { Text("Server hostname") },
@@ -89,92 +87,6 @@ fun SettingsScreen(
                         Text(text = "Load Defaults")
                     }
                 }
-            }
-
-            Text(text = "Other Settings", modifier = Modifier.padding(vertical = 4.dp))
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)) {
-                TextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = retryCount.toString(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    onValueChange = {
-                        retryCount = it.toInt()
-                    },
-                    label = { Text(text = "Number of retries", modifier = Modifier.padding(vertical = 4.dp)) }
-                )
-            }
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)) {
-                var mobileData by remember { mutableStateOf(true) }
-                Checkbox(mobileData, onCheckedChange = {
-                    mobileData = it
-                })
-                Text(text = "Use Mobile Data", modifier = Modifier.padding(vertical = 4.dp))
-            }
-
-            var devmode by remember { mutableStateOf(configRepo.developerMode) }
-            // TODO this leaks
-//            configRepo.onChange {
-//                devmode = configRepo.developerMode
-//            }
-            var devModeCountDown: Int by remember { mutableIntStateOf(5) }
-            Text(
-                text = "App version: ${BuildConfig.VERSION_NAME}", modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .clickable {
-                        if (--devModeCountDown < 0) {
-                            configRepo.save(developerMode = true)
-                            devmode = true
-                        }
-                    })
-
-            if (devmode) {
-                developerSettings()
-            }
-        }
-    }
-}
-
-@Composable
-fun DeveloperSettings(
-    configRepo: SharedPrefsConfigRepository,
-    navigateToAuditLogs: () -> Unit,
-    clearWorkManager: () -> Unit,
-    auditRepository: AuditRepository,
-    photoPrismApp: PhotoPrismApp,
-    /** TODO pass in work manager livedata or flow **/
-    workManagerJobCountFlow: Flow<Int>,
-) {
-    Text(text = "Debug Settings", modifier = Modifier.padding(vertical = 4.dp))
-    Box(
-        modifier = Modifier
-            .padding(vertical = 4.dp)
-            .border(BorderStroke(1.dp, Color.DarkGray))
-    ) {
-
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = navigateToAuditLogs) {
-                Text(text = "View Debug Logs")
-            }
-            Button(onClick = auditRepository::clearAll) {
-                Text(text = "Clear debug logs")
-            }
-            Button(onClick = photoPrismApp::clearSyncQueue) {
-                Text(text = "Clear Sync Queue")
-            }
-            Button(onClick = clearWorkManager) {
-                Text(text = "Clear work manager queue")
-            }
-            val count by workManagerJobCountFlow.collectAsStateWithLifecycle(0)
-            Text(text = "$count work items")
-            Button(onClick = {
-                configRepo.save(developerMode = false)
-            }) {
-                Text(text = "Turn off developer settings")
             }
         }
     }

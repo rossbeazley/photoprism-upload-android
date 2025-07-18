@@ -10,6 +10,7 @@ import kotlinx.coroutines.asExecutor
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystem
+import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerBackgroundJobSystemInitialiser
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.startContentUriWatching
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.startWorkmanagerLogging
@@ -19,8 +20,6 @@ import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.photoserver.buildPhotoServer
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsLastUploadRepository
 import ulk.co.rossbeazley.photoprism.upload.syncqueue.SharedPrefsSyncQueue
-import java.io.ByteArrayOutputStream
-import java.io.PrintWriter
 
 
 class AppSingleton : Application() {
@@ -36,9 +35,11 @@ class AppSingleton : Application() {
     val syncNotification: SyncNotification by lazy { SyncNotification(this) }
 
     val photoServer: PhotoServer by lazy { buildPhotoServer(contentResolver, config) }
-    val workManagerBackgroundJobSystem: WorkManagerBackgroundJobSystem =
-        WorkManagerBackgroundJobSystem(this)
-
+    val workManagerBackgroundJobSystem: WorkManagerBackgroundJobSystem by lazy {
+        AppInitializer.getInstance(applicationContext).initializeComponent(
+            WorkManagerBackgroundJobSystemInitialiser::class.java
+        )
+    }
     val photoPrismApp: PhotoPrismApp by lazy {
         PhotoPrismApp(
             fileSystem = AndroidFileObserverFilesystem(),
@@ -47,7 +48,7 @@ class AppSingleton : Application() {
             uploadQueue = SharedPrefsSyncQueue(context = this),
             photoServer = photoServer,
             config = config,
-            lastUloadRepository = SharedPrefsLastUploadRepository(context = this),
+            lastUploadRepository = SharedPrefsLastUploadRepository(context = this),
         )
     }
 

@@ -27,11 +27,13 @@ class SharedPrefsConfigRepository(basename: String = "config_repo", context: Con
         }
     }
 
-    override val maxUploadAttempts: Int = 10
+    override val maxUploadAttempts: Int get() = sharedPrefs.getInt("maxUploadAttempts", 10)
     override val photoDirectory: String get() = sharedPrefs.getString("photoDirectory", null) ?: "/storage/emulated/0/DCIM/Camera"
     override val username: String get() = sharedPrefs.getString("username", null) ?: ""
     override val hostname: String get() = sharedPrefs.getString("hostname", null) ?: ""
     override val password: String get() = sharedPrefs.getString("password", null) ?: ""
+    override val developerMode: Boolean get() = sharedPrefs.getBoolean("developerMode", false)
+    override val useMobileData: Boolean get() = sharedPrefs.getBoolean("useMobileData", false)
     private val observers: MutableList<() -> Unit> = mutableListOf()
 
     override fun onChange(function: () -> Unit) {
@@ -42,13 +44,19 @@ class SharedPrefsConfigRepository(basename: String = "config_repo", context: Con
         photoDirectory: String = this.photoDirectory,
         hostname: String = this.hostname,
         username: String = this.username,
-        password: String = this.password
+        password: String = this.password,
+        developerMode: Boolean = this.developerMode,
+        useMobileData: Boolean = this.useMobileData,
+        maxUploadAttempts: Int = this.maxUploadAttempts
     ) {
         sharedPrefs.edit {
             putString("hostname", hostname)
             putString("username", username)
             putString("password", password)
             putString("photoDirectory", photoDirectory)
+            putBoolean("developerMode", developerMode)
+            putBoolean("useMobileData", useMobileData)
+            putInt("maxUploadAttempts", maxUploadAttempts)
             putLong("lastupdated", System.currentTimeMillis())
         }
     }

@@ -1,14 +1,13 @@
 package ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem
 
 import android.content.Context
-import android.net.Uri
-import android.provider.MediaStore
 import androidx.work.*
+import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.log
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem {
+class WorkManagerBackgroundJobSystem(val context: Context, private val config: SharedPrefsConfigRepository) : BackgroundJobSystem {
 
     override fun schedule(forPath: String): String {
         val request = OneTimeWorkRequestBuilder<JobSystemWorker>()
@@ -16,7 +15,12 @@ class WorkManagerBackgroundJobSystem(val context: Context) : BackgroundJobSystem
             .addTag(forPath)
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(
+                        if(config.useMobileData)
+                            NetworkType.CONNECTED
+                        else
+                            NetworkType.UNMETERED
+                    )
                     .build()
             )
             .setBackoffCriteria(BackoffPolicy.LINEAR, Duration.ofSeconds(30))
