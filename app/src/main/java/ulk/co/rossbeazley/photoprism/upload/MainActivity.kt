@@ -3,6 +3,7 @@ package ulk.co.rossbeazley.photoprism.upload
 import android.app.ActivityManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVis
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.core.content.ContextCompat
+import androidx.core.content.OnConfigurationChangedProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.startup.AppInitializer
 import androidx.work.WorkManager
@@ -22,6 +24,7 @@ import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.backgroundjobsystem.WorkManagerInitialiser
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
+import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import ulk.co.rossbeazley.photoprism.upload.ui.ApplicationScaffold
 
 private const val s = "Hello world!"
@@ -47,6 +50,14 @@ class MainActivity : ComponentActivity() {
         (applicationContext as AppSingleton).config
     }
 
+    val photoServer: PhotoServer by lazy {
+        (applicationContext as AppSingleton).photoServer
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -55,7 +66,9 @@ class MainActivity : ComponentActivity() {
                 workManager,
                 auditRepository,
                 photoPrismApp,
-                configRepository
+                configRepository,
+                this as OnConfigurationChangedProvider,
+                photoServer
             )
         }
         val checkSelfPermission = ContextCompat.checkSelfPermission(

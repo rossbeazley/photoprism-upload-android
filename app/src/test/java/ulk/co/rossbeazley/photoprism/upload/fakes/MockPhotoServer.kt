@@ -20,6 +20,10 @@ class MockPhotoServer(var autoComplete: Boolean = false) : PhotoServer {
         }
     }
 
+    override suspend fun getUserInfo(): Result<Unit> {
+        TODO("Not yet implemented")
+    }
+
     private fun complete(with: Result<Unit>) {
         capturedContinuation?.resume(with)
         capturedContinuation = null

@@ -1,37 +1,30 @@
 package ulk.co.rossbeazley.photoprism.upload.ui
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.Flow
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import ulk.co.rossbeazley.photoprism.upload.BuildConfig
-import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
-import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
+import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 
 @Composable
 fun OnboardingScreen(
@@ -50,8 +43,21 @@ fun OnboardingScreen(
     }
 
     MaterialTheme {
-        Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
-            Text("Lets connect to your server", modifier = Modifier.fillMaxWidth())
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .photoPrismBackground()
+        ) {
+            Text(
+                "Lets get you connected to your server",
+                textAlign = TextAlign.Center,
+                fontSize = 24.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 36.dp)
+            )
             Column(modifier = Modifier.fillMaxWidth()) {
                 TextField(
                     label = { Text("Server hostname") },

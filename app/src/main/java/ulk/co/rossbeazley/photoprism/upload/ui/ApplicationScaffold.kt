@@ -13,12 +13,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.core.content.OnConfigurationChangedProvider
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
@@ -31,6 +31,7 @@ import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
 import ulk.co.rossbeazley.photoprism.upload.audit.AuditRepository
 import ulk.co.rossbeazley.photoprism.upload.audit.Debug
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
+import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import kotlin.Int
 
 @Serializable data object Home : NavKey
@@ -49,13 +50,12 @@ fun ApplicationScaffold(
     workManager: WorkManager,
     auditRepository: AuditRepository,
     app: PhotoPrismApp,
-    configRepository: SharedPrefsConfigRepository
+    configRepository: SharedPrefsConfigRepository,
+    activityUiConfiguration: OnConfigurationChangedProvider,
+    photoServer: PhotoServer
 ) {
-//    val backStack = remember { mutableStateListOf<Any>(Home) }
-    val backStack = rememberNavBackStack(Home)
-
+    val backStack = rememberNavBackStack(if(configRepository.isConfigured()) Home else Onboarding)
     var extraAction by remember { mutableStateOf<MenuItem?>(null) }
-
     val menuItems = mutableListOf(
         MenuItem(label = "Home", icon = Icons.Filled.AccountBox) {
             backStack.clear()
@@ -100,10 +100,12 @@ fun ApplicationScaffold(
                         slideOutHorizontally(targetOffsetX = { it })
             },
             entryProvider = entryProvider {
-                entry<Home> { PhotoPrismWebApp(hostname = configRepository.hostname) }
+                entry<Home> { PhotoPrismWebApp(hostname = configRepository.hostname, activityUiConfiguration = activityUiConfiguration) }
                 entry<AuditLogs> { AuditLogsList(auditRepository) }
                 entry<SyncQueue> { SyncQueue(app) }
-                entry<Onboarding> { OnboardingScreen(configRepository) }
+                entry<Onboarding> {
+                    OnboardingScreen(configRepository)
+                }
                 entry<Settings> {
                     SettingsScreen(
                         configRepo = configRepository,
@@ -113,6 +115,10 @@ fun ApplicationScaffold(
                                 clearWorkManager = {
                                     workManager.cancelAllWork()
                                     auditRepository.log(Debug("Cleared work manager"))
+                                },
+                                navigateToOnboarding = {
+                                    backStack.add(Onboarding)
+                                    extraAction = null
                                 },
                                 navigateToAuditLogs = {
                                     backStack.add(AuditLogs)
@@ -128,6 +134,7 @@ fun ApplicationScaffold(
                                 photoPrismApp = app,
                                 /** TODO pass in work manager livedata or flow **/
                                 workManagerJobCountFlow = flowOf<Int>(4),
+                                photoServer = photoServer
                             )
                         },
                     )

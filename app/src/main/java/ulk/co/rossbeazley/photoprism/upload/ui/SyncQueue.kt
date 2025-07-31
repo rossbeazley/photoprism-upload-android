@@ -1,9 +1,11 @@
 package ulk.co.rossbeazley.photoprism.upload.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -26,6 +28,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -80,55 +84,63 @@ fun SyncQueue(
         }
 
         val coroutineScope = rememberCoroutineScope()
-        val listState = rememberLazyListState()
         LazyColumn(
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(1.dp)
+            state = rememberLazyListState(),
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .photoPrismBackground()
         ) {
             items(syncQueue) { log: UploadQueueEntry ->
-
-                Row(modifier = Modifier.padding(4.dp)) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(log.filePath)
-                            .build(),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .width(80.dp)
-                            .height(80.dp)
-                            .clickable {
-                                imagePath = log.filePath
-                            }
-                    )
-
-                    Column {
-                        Row {
-                            Text(text = log.toViewData(), fontSize = 16.sp)
-                            when (log) {
-                                is CompletedFileUpload -> Icon(
-                                    painter = painterResource(id = R.drawable.ic_completed_24),
-                                    contentDescription = null,
-                                )
-
-                                is FailedFileUpload -> Button(onClick = {
-                                    coroutineScope.launch { photoPrismApp.importPhoto(log.filePath) }
-                                }) {
-                                    Text(text = "Retry")
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(modifier = Modifier.padding(4.dp)) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(log.filePath)
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .width(80.dp)
+                                .height(80.dp)
+                                .clickable {
+                                    imagePath = log.filePath
                                 }
+                        )
 
-                                else -> {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_uploading_24),
+                        Column {
+                            Row {
+                                Text(text = log.toViewData(), fontSize = 16.sp)
+                                when (log) {
+                                    is CompletedFileUpload -> Icon(
+                                        painter = painterResource(id = R.drawable.ic_completed_24),
                                         contentDescription = null,
                                     )
-                                    Text(text = log.attemptCount.toString(), fontSize = 8.sp)
+
+                                    is FailedFileUpload -> Button(onClick = {
+                                        coroutineScope.launch { photoPrismApp.importPhoto(log.filePath) }
+                                    }) {
+                                        Text(text = "Retry")
+                                    }
+
+                                    else -> {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_uploading_24),
+                                            contentDescription = null,
+                                        )
+                                        Text(text = log.attemptCount.toString(), fontSize = 8.sp)
+                                    }
                                 }
                             }
+                            Text(text = log.filePath, fontSize = 8.sp)
                         }
-                        Text(text = log.filePath, fontSize = 8.sp)
                     }
                 }
-                HorizontalDivider(color = Color.Black, thickness = 1.dp)
             }
         }
     }

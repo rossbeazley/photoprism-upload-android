@@ -16,6 +16,7 @@ class WorkManagerBackgroundJobSystem(val context: Context, private val config: S
             .setConstraints(
                 Constraints.Builder()
                     .setRequiredNetworkType(
+                        // TODO extension function
                         if(config.useMobileData)
                             NetworkType.CONNECTED
                         else

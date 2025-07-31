@@ -4,4 +4,6 @@ interface PhotoServer {
     suspend fun upload(
         path: String
     ): Result<Unit>
+
+    suspend fun getUserInfo(): Result<Unit>
 }

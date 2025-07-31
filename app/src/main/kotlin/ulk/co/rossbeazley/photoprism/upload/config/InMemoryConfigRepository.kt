@@ -17,4 +17,6 @@ class InMemoryConfigRepository(
     override fun onChange(function: () -> Unit) {
         observers.add(WeakReference(function))
     }
+
+    override fun isConfigured(): Boolean = true
 }

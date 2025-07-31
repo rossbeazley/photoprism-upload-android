@@ -4,16 +4,23 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import at.bitfire.dav4jvm.DavCollection
+import at.bitfire.dav4jvm.HttpUtils.fileName
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import okio.BufferedSink
 import okio.source
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import java.io.File
+import java.io.IOException
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -74,9 +81,10 @@ class WebDavPhotoServer(
         continuation: Continuation<Result<Unit>>
     ) {
         try {
+            val destinationFolder = "originals"   // TODO make this configurable
             val davResource = DavCollection(
                 httpClientFactory(),
-                "https://${user()}@${host()}/originals/$fileName".toHttpUrl(),
+                "https://${user()}@${host()}/$destinationFolder/$fileName".toHttpUrl(),
             )
             log("About to put")
             davResource.put(body = body, ifNoneMatch = true) {
@@ -86,6 +94,38 @@ class WebDavPhotoServer(
         } catch (e: Exception) {
             log("exception $e")
             continuation.resume(Result.failure(e))
+        }
+    }
+
+    override suspend fun getUserInfo(): Result<Unit> {
+        return suspendCoroutine { continuation ->
+            try {
+                log("About to getUserInfo")
+                val call = httpClientFactory().newCall(
+                    Request.Builder() //${user()}@
+                        .url("https://${host()}/api/v1/oauth/authorize")
+                        .get()
+                        .header("accept","application/json")
+                        .build()
+                )
+
+                call.enqueue(
+                    object : Callback{
+                        override fun onFailure(call: Call, e: IOException) {
+                            log("exception $e")
+                            continuation.resume(Result.failure(e))
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            log("dav respone $response")
+                            continuation.resume(Result.success(Unit))
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                log("exception $e")
+                continuation.resume(Result.failure(e))
+            }
         }
     }
 }

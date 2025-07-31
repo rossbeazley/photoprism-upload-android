@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 class SharedPrefsConfigRepository(basename: String = "config_repo", context: Context) :
     ReadonlyConfigRepository {
@@ -24,7 +27,12 @@ class SharedPrefsConfigRepository(basename: String = "config_repo", context: Con
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if ("lastupdated" == key) {
             observers.forEach { it() }
+            flow.tryEmit(this)
         }
+    }
+
+    override fun isConfigured(): Boolean {
+        return hostname.isNotEmpty() && password.isNotEmpty() && username.isNotEmpty()
     }
 
     override val maxUploadAttempts: Int get() = sharedPrefs.getInt("maxUploadAttempts", 10)
@@ -39,6 +47,12 @@ class SharedPrefsConfigRepository(basename: String = "config_repo", context: Con
     override fun onChange(function: () -> Unit) {
         observers.add(function)
     }
+    private val flow = MutableSharedFlow<ReadonlyConfigRepository>(
+        extraBufferCapacity = 1,
+        replay = 0,
+        onBufferOverflow = BufferOverflow.DROP_LATEST
+    )
+    fun changeFlow() : Flow<ReadonlyConfigRepository> = flow
 
     fun save(
         photoDirectory: String = this.photoDirectory,

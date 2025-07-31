@@ -1,5 +1,6 @@
 package ulk.co.rossbeazley.photoprism.upload.ui
 
+import android.content.res.Configuration
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
@@ -14,9 +15,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.OnConfigurationChangedProvider
+import androidx.core.util.Consumer
 
 @Composable
-fun PhotoPrismWebApp(modifier: Modifier = Modifier, hostname: String) {
+fun PhotoPrismWebApp(
+    modifier: Modifier = Modifier,
+    hostname: String,
+    activityUiConfiguration: OnConfigurationChangedProvider
+) {
     val browseUrl = "https://$hostname/library/browse"
     var isEnabled by remember { mutableStateOf(true) }
     var onBack: () -> Unit = {
@@ -26,6 +33,8 @@ fun PhotoPrismWebApp(modifier: Modifier = Modifier, hostname: String) {
         Log.i("NAV", "backhandler")
         onBack()
     }
+
+    var webviewInvalidationStrategy : ConfigurationConsumer? = null
 
     AndroidView(
         modifier = modifier
@@ -71,6 +80,8 @@ fun PhotoPrismWebApp(modifier: Modifier = Modifier, hostname: String) {
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
                     loadUrl(browseUrl)
+                    webviewInvalidationStrategy = ConfigurationConsumer(this)
+                    activityUiConfiguration.addOnConfigurationChangedListener(webviewInvalidationStrategy)
                 }
         },
         update = { webView ->
@@ -82,6 +93,15 @@ fun PhotoPrismWebApp(modifier: Modifier = Modifier, hostname: String) {
         onRelease = { webView ->
             Log.i("NAV", "destroy webview")
             webView.destroy()
+            webviewInvalidationStrategy?.let {
+                activityUiConfiguration.removeOnConfigurationChangedListener(it)
+            }
         }
     )
+}
+
+class ConfigurationConsumer(var webview:WebView) : Consumer<Configuration> {
+    override fun accept(value: Configuration) {
+        webview.invalidate()
+    }
 }
