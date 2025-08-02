@@ -4,7 +4,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import at.bitfire.dav4jvm.DavCollection
-import at.bitfire.dav4jvm.HttpUtils.fileName
+import at.bitfire.dav4jvm.DavCollection.Companion.SYNC_COLLECTION
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -14,7 +14,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okio.BufferedSink
 import okio.source
@@ -97,35 +96,55 @@ class WebDavPhotoServer(
         }
     }
 
-    override suspend fun getUserInfo(): Result<Unit> {
+    override suspend fun checkConnection(): Result<Unit> {
+        //return pingApi()
+
         return suspendCoroutine { continuation ->
             try {
-                log("About to getUserInfo")
-                val call = httpClientFactory().newCall(
-                    Request.Builder() //${user()}@
-                        .url("https://${host()}/api/v1/oauth/authorize")
-                        .get()
-                        .header("accept","application/json")
-                        .build()
+                val destinationFolder = "originals"   // TODO make this configurable
+                val davResource = DavCollection(
+                    httpClientFactory(),
+                    "https://${user()}@${host()}/$destinationFolder".toHttpUrl(),
                 )
-
-                call.enqueue(
-                    object : Callback{
-                        override fun onFailure(call: Call, e: IOException) {
-                            log("exception $e")
-                            continuation.resume(Result.failure(e))
-                        }
-
-                        override fun onResponse(call: Call, response: Response) {
-                            log("dav respone $response")
-                            continuation.resume(Result.success(Unit))
-                        }
-                    }
-                )
+                log("About to propfind")
+                davResource.propfind(1,SYNC_COLLECTION) { it: at.bitfire.dav4jvm.Response, two: at.bitfire.dav4jvm.Response.HrefRelation ->
+                    log("dav respone $it")
+                    continuation.resume(Result.success(Unit))
+                }
             } catch (e: Exception) {
                 log("exception $e")
                 continuation.resume(Result.failure(e))
             }
+        }
+    }
+
+    private suspend fun pingApi(): Result<Unit> = suspendCoroutine { continuation ->
+        try {
+            log("About to getUserInfo")
+            val call = httpClientFactory().newCall(
+                Request.Builder() //${user()}@
+                    .url("https://${host()}/api/v1/oauth/authorize")
+                    .get()
+                    .header("accept", "application/json")
+                    .build()
+            )
+
+            call.enqueue(
+                object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        log("exception $e")
+                        continuation.resume(Result.failure(e))
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        log("dav respone $response")
+                        continuation.resume(Result.success(Unit))
+                    }
+                }
+            )
+        } catch (e: Exception) {
+            log("exception $e")
+            continuation.resume(Result.failure(e))
         }
     }
 }

@@ -104,7 +104,7 @@ fun ApplicationScaffold(
                 entry<AuditLogs> { AuditLogsList(auditRepository) }
                 entry<SyncQueue> { SyncQueue(app) }
                 entry<Onboarding> {
-                    OnboardingScreen(configRepository)
+                    OnboardingScreen(configRepository,photoServer)
                 }
                 entry<Settings> {
                     SettingsScreen(

@@ -20,7 +20,7 @@ class MockPhotoServer(var autoComplete: Boolean = false) : PhotoServer {
         }
     }
 
-    override suspend fun getUserInfo(): Result<Unit> {
+    override suspend fun checkConnection(): Result<Unit> {
         TODO("Not yet implemented")
     }
 

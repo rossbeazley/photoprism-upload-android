@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -240,14 +241,7 @@ fun DeveloperSettings(
             Button(onClick = navigateToOnboarding) {
                 Text(text = "Onboarding")
             }
-            val coroutineScope = rememberCoroutineScope()
-            Button(onClick = {
-                coroutineScope.launch {
-                    photoServer.getUserInfo()
-                }
-            }, modifier = Modifier.padding(end = 4.dp)) {
-                Text(text = "Test Connection")
-            }
+            TestConnectionButton(photoServer)
             Button(onClick = navigateToAuditLogs) {
                 Text(text = "View Debug Logs")
             }

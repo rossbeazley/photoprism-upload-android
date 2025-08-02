@@ -13,15 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import ulk.co.rossbeazley.photoprism.upload.BuildConfig
 import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
@@ -29,6 +28,7 @@ import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 @Composable
 fun OnboardingScreen(
     configRepo: SharedPrefsConfigRepository,
+    photoServer: PhotoServer,
 ) {
     var serverurl by remember { mutableStateOf(configRepo.hostname) }
     var username by remember { mutableStateOf(configRepo.username) }
@@ -62,7 +62,9 @@ fun OnboardingScreen(
                 TextField(
                     label = { Text("Server hostname") },
                     value = serverurl,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     placeholder = { Text("hostname no scheme") },
                     onValueChange = { serverurl = it },
 
@@ -70,21 +72,25 @@ fun OnboardingScreen(
                 TextField(
                     value = username,
                     onValueChange = { username = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     label = { Text(text = "Username") }
                 )
                 TextField(
                     value = password,
                     visualTransformation = PasswordVisualTransformation(),
                     onValueChange = { password = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     label = { Text(text = "Password") }
                 )
 
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Button(onClick = updateSettings, modifier = Modifier.padding(end = 4.dp)) {
-                        Text(text = "Save")
-                    }
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)) {
+                    TestConnectionButton(photoServer)
                     Button(onClick = {
                         serverurl = BuildConfig.webdavHostName
                         username = BuildConfig.webdavUserName
@@ -93,7 +99,18 @@ fun OnboardingScreen(
                         Text(text = "Load Defaults")
                     }
                 }
+
+                Button(
+                    onClick = updateSettings,
+                    modifier = Modifier
+                        .fillMaxWidth(0.66f)
+                        .padding(vertical = 24.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Text(text = "Save and Continue")
+                }
             }
         }
     }
 }
+

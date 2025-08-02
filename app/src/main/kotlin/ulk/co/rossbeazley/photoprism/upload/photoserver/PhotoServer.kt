@@ -5,5 +5,5 @@ interface PhotoServer {
         path: String
     ): Result<Unit>
 
-    suspend fun getUserInfo(): Result<Unit>
+    suspend fun checkConnection(): Result<Unit>
 }
