@@ -9,6 +9,8 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
+private const val string = "useMobileData"
+
 class SharedPrefsConfigRepository(basename: String = "config_repo", context: Context) :
     ReadonlyConfigRepository {
 
@@ -41,7 +43,7 @@ class SharedPrefsConfigRepository(basename: String = "config_repo", context: Con
     override val hostname: String get() = sharedPrefs.getString("hostname", null) ?: ""
     override val password: String get() = sharedPrefs.getString("password", null) ?: ""
     override val developerMode: Boolean get() = sharedPrefs.getBoolean("developerMode", false)
-    override val useMobileData: Boolean get() = sharedPrefs.getBoolean("useMobileData", false)
+    override val useMobileData: Boolean get() = sharedPrefs.getBoolean(KEY_USE_MOBILE_DATA, false)
     private val observers: MutableList<() -> Unit> = mutableListOf()
 
     override fun onChange(function: () -> Unit) {
@@ -69,9 +71,13 @@ class SharedPrefsConfigRepository(basename: String = "config_repo", context: Con
             putString("password", password)
             putString("photoDirectory", photoDirectory)
             putBoolean("developerMode", developerMode)
-            putBoolean("useMobileData", useMobileData)
+            putBoolean(KEY_USE_MOBILE_DATA, useMobileData)
             putInt("maxUploadAttempts", maxUploadAttempts)
             putLong("lastupdated", System.currentTimeMillis())
         }
+    }
+
+    companion object {
+        private const val KEY_USE_MOBILE_DATA = "useMobileData"
     }
 }

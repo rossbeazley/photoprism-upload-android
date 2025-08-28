@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia
@@ -14,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.core.content.ContextCompat
 import androidx.core.content.OnConfigurationChangedProvider
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.startup.AppInitializer
 import androidx.work.WorkManager
@@ -60,6 +62,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //WindowCompat.enableEdgeToEdge(window)
+        enableEdgeToEdge()
         setContent {
             ApplicationScaffold(
                 ::doAddPhoto,

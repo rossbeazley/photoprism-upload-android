@@ -1,22 +1,35 @@
 package ulk.co.rossbeazley.photoprism.upload.ui
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
 import android.util.Log
 import android.view.ViewGroup
+import android.view.Window
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.content.OnConfigurationChangedProvider
 import androidx.core.util.Consumer
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 @Composable
 fun PhotoPrismWebApp(
@@ -34,11 +47,12 @@ fun PhotoPrismWebApp(
         onBack()
     }
 
-    var webviewInvalidationStrategy : ConfigurationConsumer? = null
+    var webviewInvalidationStrategy: ConfigurationConsumer? = null
 
     AndroidView(
         modifier = modifier
-            .fillMaxHeight(),
+            .fillMaxHeight()
+            .windowInsetsPadding(WindowInsets.statusBars),
         factory = { context ->
             WebView(context)
                 .apply {
@@ -81,7 +95,9 @@ fun PhotoPrismWebApp(
                     )
                     loadUrl(browseUrl)
                     webviewInvalidationStrategy = ConfigurationConsumer(this)
-                    activityUiConfiguration.addOnConfigurationChangedListener(webviewInvalidationStrategy)
+                    activityUiConfiguration.addOnConfigurationChangedListener(
+                        webviewInvalidationStrategy
+                    )
                 }
         },
         update = { webView ->
@@ -98,9 +114,10 @@ fun PhotoPrismWebApp(
             }
         }
     )
+
 }
 
-class ConfigurationConsumer(var webview:WebView) : Consumer<Configuration> {
+class ConfigurationConsumer(var webview: WebView) : Consumer<Configuration> {
     override fun accept(value: Configuration) {
         webview.invalidate()
     }

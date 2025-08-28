@@ -3,7 +3,10 @@ package ulk.co.rossbeazley.photoprism.upload.ui
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
@@ -34,15 +37,20 @@ import ulk.co.rossbeazley.photoprism.upload.config.SharedPrefsConfigRepository
 import ulk.co.rossbeazley.photoprism.upload.photoserver.PhotoServer
 import kotlin.Int
 
-@Serializable data object Home : NavKey
+@Serializable
+data object Home : NavKey
 
-@Serializable data object SyncQueue : NavKey
+@Serializable
+data object SyncQueue : NavKey
 
-@Serializable data object AuditLogs : NavKey
+@Serializable
+data object AuditLogs : NavKey
 
-@Serializable data object Settings : NavKey
+@Serializable
+data object Settings : NavKey
 
-@Serializable data object Onboarding : NavKey // TODO screen for
+@Serializable
+data object Onboarding : NavKey // TODO screen for
 
 @Composable
 fun ApplicationScaffold(
@@ -54,32 +62,40 @@ fun ApplicationScaffold(
     activityUiConfiguration: OnConfigurationChangedProvider,
     photoServer: PhotoServer
 ) {
-    val backStack = rememberNavBackStack(if(configRepository.isConfigured()) Home else Onboarding)
+
+    UseLightStatusBarIcons()
+
+    val backStack = rememberNavBackStack(if (configRepository.isConfigured()) Home else Onboarding)
     var extraAction by remember { mutableStateOf<MenuItem?>(null) }
-    val menuItems = mutableListOf(
-        MenuItem(label = "Home", icon = Icons.Filled.AccountBox) {
-            backStack.clear()
-            backStack.add(Home)
-            extraAction = null
-        },
-        MenuItem(label = "Import Photo", icon = Icons.Filled.Add) {
-            doAddPhoto()
-        },
-        MenuItem(label = "Sync Queue", icon = Icons.Filled.Menu) {
-            backStack.add(SyncQueue)
-            extraAction = MenuItem(label = "Clear Sync Queue", icon = Icons.Filled.Clear) {
-                app.clearSyncQueue()
-            }
-        },
-        MenuItem(label = "Settings", icon = Icons.Filled.Settings) {
-            backStack.add(Settings)
-            extraAction = null
-        },
-    )
+    val fabMenuItems by remember {
+        mutableStateOf(
+            listOf(
+                MenuItem(label = "Home", icon = Icons.Filled.AccountBox) {
+                    backStack.clear()
+                    backStack.add(Home)
+                    extraAction = null
+                },
+                MenuItem(label = "Import Photo", icon = Icons.Filled.Add) {
+                    doAddPhoto()
+                },
+                MenuItem(label = "Sync Queue", icon = Icons.Filled.Menu) {
+                    backStack.add(SyncQueue)
+                    extraAction = MenuItem(label = "Clear Sync Queue", icon = Icons.Filled.Clear) {
+                        app.clearSyncQueue()
+                    }
+                },
+                MenuItem(label = "Settings", icon = Icons.Filled.Settings) {
+                    backStack.add(Settings)
+                    extraAction = null
+                },
+            )
+        )
+    }
 
     Scaffold(
-        containerColor = Color.White,
-        floatingActionButton = { FABMenu(menuItems, extraAction) }
+        containerColor = Color. Black,
+        contentWindowInsets = WindowInsets.ime,
+        floatingActionButton = { FABMenu(fabMenuItems, extraAction) }
     ) {
         NavDisplay(
             modifier = Modifier.padding(it),
@@ -99,12 +115,18 @@ fun ApplicationScaffold(
                 slideInHorizontally(initialOffsetX = { -it }) togetherWith
                         slideOutHorizontally(targetOffsetX = { it })
             },
+            //entryDecorators to setup fab menu
             entryProvider = entryProvider {
-                entry<Home> { PhotoPrismWebApp(hostname = configRepository.hostname, activityUiConfiguration = activityUiConfiguration) }
+                entry<Home> {
+                    PhotoPrismWebApp(
+                        hostname = configRepository.hostname,
+                        activityUiConfiguration = activityUiConfiguration,
+                    )
+                }
                 entry<AuditLogs> { AuditLogsList(auditRepository) }
                 entry<SyncQueue> { SyncQueue(app) }
                 entry<Onboarding> {
-                    OnboardingScreen(configRepository,photoServer)
+                    OnboardingScreen(configRepository, photoServer)
                 }
                 entry<Settings> {
                     SettingsScreen(

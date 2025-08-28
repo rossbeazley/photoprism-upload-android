@@ -1,16 +1,20 @@
 package ulk.co.rossbeazley.photoprism.upload.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -40,7 +45,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ulk.co.rossbeazley.photoprism.upload.BuildConfig
 import ulk.co.rossbeazley.photoprism.upload.PhotoPrismApp
@@ -54,17 +61,33 @@ fun SettingsScreen(
     developerSettings: @Composable () -> Unit,
 ) {
     var serverurl by remember { mutableStateOf(configRepo.hostname) }
+    val serverUrlFlow by configRepo.changeFlow()
+        .map { it.hostname }
+        .onEach { serverurl = it }
+        .collectAsStateWithLifecycle(configRepo.hostname)
+
+
     var username by remember { mutableStateOf(configRepo.username) }
     var password by remember { mutableStateOf(configRepo.password) }
     var retryCount by remember { mutableIntStateOf(configRepo.maxUploadAttempts) }
+    var mobileData by remember { mutableStateOf(configRepo.useMobileData) }
+
+
+    var showToast by remember { mutableStateOf(false) }
+    if(showToast) {
+        Toast.makeText(LocalContext.current, "Settings Saved", Toast.LENGTH_SHORT ).show()
+        showToast = false
+    }
 
     val updateSettings = {
         configRepo.save(
             username = username,
             password = password,
             hostname = serverurl,
-            maxUploadAttempts = retryCount
+            maxUploadAttempts = retryCount,
+            useMobileData = mobileData,
         )
+        showToast = true
     }
 
     MaterialTheme {
@@ -82,6 +105,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .padding(bottom = 24.dp, top = 24.dp)
                     .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
             )
 
             Card(
@@ -103,7 +127,6 @@ fun SettingsScreen(
                             .height(80.dp)
                             .padding(vertical = 4.dp)
                     ) {
-                        var mobileData by remember { mutableStateOf(true) }
                         Checkbox(mobileData, onCheckedChange = {
                             mobileData = it
                         }, modifier = Modifier.align(Alignment.CenterVertically))
@@ -129,7 +152,6 @@ fun SettingsScreen(
                         label = {
                             Text(
                                 text = "Number of times to retry upload",
-                                //modifier = Modifier.padding(vertical = 4.dp)
                             )
                         }
                     )
@@ -182,14 +204,6 @@ fun SettingsScreen(
                     .padding(top = 16.dp, bottom = 16.dp)
                     .align(Alignment.End)
             ) {
-                Button(onClick = {
-                    serverurl = BuildConfig.webdavHostName
-                    username = BuildConfig.webdavUserName
-                    password = BuildConfig.webdavPassword
-                }, modifier = Modifier.padding(start = 4.dp)) {
-                    Text(text = "Load Defaults")
-                }
-
                 Button(onClick = updateSettings, modifier = Modifier.padding(end = 4.dp)) {
                     Text(text = "Save")
                 }
@@ -230,14 +244,27 @@ fun DeveloperSettings(
     workManagerJobCountFlow: Flow<Int>,
     photoServer: PhotoServer,
 ) {
-    Text(text = "Debug Settings", modifier = Modifier.padding(vertical = 4.dp))
     Box(
         modifier = Modifier
-            .padding(vertical = 4.dp)
+            .padding(4.dp)
             .border(BorderStroke(1.dp, Color.DarkGray))
+            .padding(4.dp)
     ) {
 
         Column(modifier = Modifier.fillMaxWidth()) {
+
+            Text(text = "Debug Settings", modifier = Modifier.padding(vertical = 4.dp))
+            
+            Button(onClick = {
+                configRepo.save(
+                    hostname = BuildConfig.webdavHostName,
+                    username = BuildConfig.webdavUserName,
+                    password = BuildConfig.webdavPassword
+                )
+            }, modifier = Modifier.padding(start = 4.dp)) {
+                Text(text = "Load Defaults")
+            }
+
             Button(onClick = navigateToOnboarding) {
                 Text(text = "Onboarding")
             }
